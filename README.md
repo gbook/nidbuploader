@@ -34,10 +34,12 @@ QTCreator will create a directory called something like `build-NiDBUploader-Desk
 
     cp nidbuploader/NiDBUploader.sh build-NiDBUploader-Desktop_Qt_5_3_GCC_64bit_release
     cd build-NiDBUploader-Desktop_Qt_5_3_GCC_64bit_release
+    chmod 777 NiDBUploader.sh
+    cp ../NiDBUploader/gdcmbin/bin/* .
     mkdir platforms
     cd platforms
     cp /opt/Qt/5.3/gcc_64/plugins/platforms/* .
     cp /opt/Qt/5.3/gcc_64/lib/libQt5DBus.so.5 .
-    cp /opt/Qt/5.3/gcc_64/lib/libQtGui.so.5 .
+    cp /opt/Qt/5.3/gcc_64/lib/libQt5Gui.so.5 .
     cp /opt/Qt/5.3/gcc_64/lib/libQt5Core.so.5 .
     zip -r NiDBUploader-<LinuxVer>-<builddate>.zip build-NiDBUploader-Desktop_Qt_5_3_GCC_64bit_release/*
