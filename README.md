@@ -42,4 +42,5 @@ QTCreator will create a directory called something like `build-NiDBUploader-Desk
     cp /opt/Qt/5.3/gcc_64/lib/libQt5DBus.so.5 .
     cp /opt/Qt/5.3/gcc_64/lib/libQt5Gui.so.5 .
     cp /opt/Qt/5.3/gcc_64/lib/libQt5Core.so.5 .
+    cd ../..
     zip -r NiDBUploader-<LinuxVer>-<builddate>.zip build-NiDBUploader-Desktop_Qt_5_3_GCC_64bit_release/*
