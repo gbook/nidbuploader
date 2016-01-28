@@ -60,11 +60,12 @@ public:
     QString GenerateRandomString(int len);
     void AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARREC);
     bool AnonymizeOneFileDumb(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode = false);
-    int UploadFileList(QStringList list);
+    int UploadFileList(QStringList list, QStringList md5list);
     void SetTempDir();
     void ShowMessageBox(QString msg);
     QString timeConversion(int msecs);
     QString humanReadableSize(quint64 intSize);
+    QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
 
     void StartTransaction();
     void EndTransaction();

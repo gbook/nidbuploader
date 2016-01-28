@@ -157,11 +157,12 @@ void MainWindow::on_pushButton_clicked()
 /* test the specified connection                     */
 void MainWindow::on_btnTestConn_clicked()
 {
-    WriteLog("Caling SetProxy() in on_btnTestConn_clicked()...");
+    WriteLog("Calling SetProxy() in on_btnTestConn_clicked()...");
     networkManager->setProxy(GetProxy());
-    WriteLog("Done caling SetProxy() in on_btnTestConn_clicked()...");
+    WriteLog("Done calling SetProxy() in on_btnTestConn_clicked()...");
 
     if (GetConnectionParms(connServer, connUsername, connPassword)) {
+        WriteLog("Should've gotten through GetConnectionParms()");
         /* set the hourglass cursor */
         QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -223,7 +224,6 @@ void MainWindow::onGetReply()
     else {
         WriteLog(response);
     }
-        //ui->txtLog->append(response);
 
     WriteLog("Leaving OnGetReply()");
 }
@@ -262,7 +262,6 @@ void MainWindow::onGetReplyUpload()
     }
 
     WriteLog("OnGetReplyUpload(" + response + ")");
-    //ui->txtLog->append(response);
 
     WriteLog(QString("(Z1) numFilesSentTotal: [%1] numFilesSentSuccess: [%2] numFilesSentFail: [%3]").arg(numFilesSentTotal).arg(numFilesSentSuccess).arg(numFilesSentFail));
 
@@ -529,6 +528,15 @@ bool MainWindow::AddFoundFile(QDirIterator *it, QString f, QString fType, QStrin
     cDate = info.created().toString();
     sSize = humanReadableSize(size);
 
+    QString md5str = "0";
+    //if (ui->chkUseMD5->isChecked()) {
+    //    QByteArray md5 = GetFileChecksum(f,QCryptographicHash::Md5);
+    //    md5str = QString("%1").arg(md5.toStdString().c_str());
+    //}
+    //else {
+    //    md5str = "0";
+    //}
+
     const int currentRow = ui->tableFiles->rowCount();
     ui->tableFiles->setRowCount(currentRow + 1);
 
@@ -539,7 +547,8 @@ bool MainWindow::AddFoundFile(QDirIterator *it, QString f, QString fType, QStrin
     ui->tableFiles->setItem(currentRow, 4, new QTableWidgetItem(filePatientID));
     ui->tableFiles->setItem(currentRow, 5, new QTableWidgetItem(cDate));
     ui->tableFiles->setItem(currentRow, 6, new QTableWidgetItem(sSize));
-    ui->tableFiles->setItem(currentRow, 7, new QTableWidgetItem(QString("%1").arg(size)));
+    ui->tableFiles->setItem(currentRow, 7, new QTableWidgetItem(md5str.toUpper()));
+    ui->tableFiles->setItem(currentRow, 8, new QTableWidgetItem(QString("%1").arg(size)));
 
     numFilesFound++;
     numBytesFound += size;
@@ -662,13 +671,6 @@ void MainWindow::on_btnUploadAll_clicked()
         fileList.append(i);
         currentUploadSize += ui->tableFiles->item(i,7)->text().toInt();
 
-        //int numUploadsPerPOST;
-        //if (modality == "EEG") {
-        //    numUploadsPerPOST = 5;
-        //}
-        //else {
-        //    numUploadsPerPOST = 100;
-        //}
         ui->lblStatus->setText("Preparing file");
 
         int compareSize;
@@ -678,9 +680,8 @@ void MainWindow::on_btnUploadAll_clicked()
         else {
             compareSize = currentUploadSize;
         }
-        if ((compareSize > 500000000) || (fileList.size() >= 100)) {
-        //if (fileList.length() >= numUploadsPerPOST) {
-            //qDebug() << fileList.length();
+        /* more than 500MB or 300 files, split it up */
+        if ((compareSize > 500000000) || (fileList.size() >= 300)) {
             AnonymizeAndUpload(fileList, isDICOM, isPARREC);
             /* clear the list */
             fileList.clear();
@@ -711,6 +712,7 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
 
     WriteLog("Entering AnonymizeAndUpload()");
     QStringList uploadList;
+    QStringList md5list;
     QString tmpDir = "";
 
     /* if its a DICOM or PARREC file, create a tmp directory to anonymize it */
@@ -722,7 +724,6 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
         WriteLog(QString("Creating tmpDir [%1]").arg(tmpDir.toStdString().c_str()));
     }
 
-    //ui->txtLog->append(QString("Anonymizing %1 files...").arg(list.size()));
     WriteLog(QString("in AnonymizeAndUpload: got list of size %1").arg(list.size()));
 
     /* loop through the list of table row numbers, and try to anonymize (if DICOM) and then upload the file */
@@ -733,6 +734,7 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
         QString newFilePath;
         QString newPathPar;
         QString newPathRec;
+        QString md5str;
 
         /* update the elapsed time */
         ui->lblUploadElapsed->setText(QString("%1").arg(timeConversion(elapsedUploadTime.elapsed())));
@@ -746,36 +748,6 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
             //qDebug("Copying [%s] to [%s]", f.toStdString().c_str(), newFilePath.toStdString().c_str());
             /* add this filepath to the list of files to be uploaded */
             uploadList << newFilePath;
-        }
-        else if (isPARREC) {
-            /* copy file to temp dir */
-            newFilePath = tmpDir + "/" + GenerateRandomString(15);
-            newPathPar = newFilePath + ".par";
-            newPathRec = newFilePath + ".rec";
-            QString f2 = f;
-            f2.replace(".par",".rec");
-            //qDebug("f [%s] , f2 [%s]", f.toStdString().c_str(), f2.toStdString().c_str());
-            //qDebug("newPathPar [%s] , newPathRec [%s]", newPathPar.toStdString().c_str(), newPathRec.toStdString().c_str());
-
-            QFile::copy(f,newPathPar);
-            //qDebug("Copying [%s] to [%s]", f.toStdString().c_str(), newPathPar.toStdString().c_str());
-            QFile::copy(f2,newPathRec);
-            //qDebug("Copying [%s] to [%s]", f2.toStdString().c_str(), newPathRec.toStdString().c_str());
-
-            /* add these filepaths to the list of files to be uploaded */
-            uploadList << newPathPar;
-            uploadList << newPathRec;
-        }
-        else {
-            newFilePath = f;
-            /* add this filepath to the list of files to be uploaded */
-            uploadList << newFilePath;
-        }
-
-        ui->tableFiles->setCurrentCell(ii,0);
-        //qDebug("Inside AnonymizeAndUpload loop [%d]",ii);
-
-        if (isDICOM) {
             gdcm::Reader r;
             gdcm::File file;
             gdcm::StringFilter sf;
@@ -867,16 +839,12 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
             /* check if the patient birthdate should be removed */
             if (ui->chkRemovePatientBirthDate->isChecked()) {
                 QString newTagVal = "0000-00-00";
-
-                //qDebug("Removed birthdate");
-
                 gdcm::Tag tag;
                 tag.ReadFromCommaSeparatedString("0010,0030");
                 replace_tags_value.push_back( std::make_pair(tag, newTagVal.toStdString().c_str()) );
             }
 
             ui->tableFiles->setCurrentCell(ii,0);
-            //ui->tableFiles->scrollTo(i);
             gdcm::Anonymizer anon;
             if (AnonymizeOneFileDumb(anon,newFilePath.toStdString().c_str(),newFilePath.toStdString().c_str(),empty_tags,remove_tags,replace_tags_value,false)) {
                 ui->tableFiles->setItem(ii,1,new QTableWidgetItem("Anonymized"));
@@ -884,82 +852,73 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
             else {
                 ui->tableFiles->setItem(ii,1,new QTableWidgetItem("Error anonymizing"));
             }
+
+            /* get the MD5 hash after anonymization */
+            if (ui->chkUseMD5->isChecked()) {
+                QByteArray md5 = GetFileChecksum(newFilePath,QCryptographicHash::Md5);
+                md5list << QString("%1").arg(md5.toStdString().c_str());
+                ui->tableFiles->setItem(ii,7,new QTableWidgetItem(QString("%1").arg(md5.toUpper().toStdString().c_str())));
+            }
+            else {
+                md5list << "0";
+            }
         }
-        if (isPARREC) {
-            /* get the Patient Name */
-            //QByteArray fileData;
-            //QString text;
-            //QString newPatientID, oldPatientID;
-            //QFile inputFile(newPathPar);
-            //WriteLog(QString("Attempting to anonymize [%1]").arg(inputFile.fileName()));
-            //if (inputFile.open(QIODevice::ReadOnly | QIODevice::Text))
-            //{
-               //fileData = inputFile.readAll(); // read all the data into the byte array
-               //text = fileData; // add to text string for easy string replace
+        else if (isPARREC) {
+            /* copy file to temp dir */
+            newFilePath = tmpDir + "/" + GenerateRandomString(15);
+            newPathPar = newFilePath + ".par";
+            newPathRec = newFilePath + ".rec";
+            QString f2 = f;
+            f2.replace(".par",".rec");
+            //qDebug("f [%s] , f2 [%s]", f.toStdString().c_str(), f2.toStdString().c_str());
+            //qDebug("newPathPar [%s] , newPathRec [%s]", newPathPar.toStdString().c_str(), newPathRec.toStdString().c_str());
 
-            //   WriteLog("About to parse through the lines");
-               //WriteLog(QString("file contents [%1]").arg(fileData));
-            //   QTextStream in(&inputFile);
-               //QString fileData = in.readAll();
-               //WriteLog(QString("File contents [%1]").arg(fileData));
-            //   while ( !in.atEnd() )
-            //   {
-                  //WriteLog("Hi");
-            //      QString line = in.readLine();
-                  //WriteLog(QString("Checking line [%1] for 'Patient name'").arg(line));
-            //      if (line.contains("Patient name")) {
-                      //WriteLog(QString("The matching 'Patient name' line [%1]").arg(line));
-            //          QStringList parts = line.split(":",QString::SkipEmptyParts);
-            //          oldPatientID = parts[1].trimmed();
-            //          oldPatientID = oldPatientID.toLower();
-            //          break;
-            //      }
-            //   }
-            //   inputFile.close();
-            //}
-            //else {
-            //    WriteLog(QString("Could not open [%1]").arg(inputFile.fileName()));
-            //}
+            QFile::copy(f,newPathPar);
+            //qDebug("Copying [%s] to [%s]", f.toStdString().c_str(), newPathPar.toStdString().c_str());
+            QFile::copy(f2,newPathRec);
+            //qDebug("Copying [%s] to [%s]", f2.toStdString().c_str(), newPathRec.toStdString().c_str());
 
-            /* encrypt the patient name */
-            //QByteArray hash = QCryptographicHash::hash(oldPatientID.toUtf8(), QCryptographicHash::Sha1);
-            //newPatientID = hash.toHex().toUpper();
-
-            /* replace the patient name */
-            //QByteArray fileData;
-            //QFile f(newPathPar);
-            //f.open(QFile::ReadWrite | QFile::Text); // open for read and write
-            //QTextStream in(&f);
-            //QString text = in.readAll(); // read all the data into the byte array
-            //QString text(fileData); // add to text string for easy string replace
-            //qDebug("Replacing [%s] with [%s] in file [%s]", oldPatientID.toStdString().c_str(), newPatientID.toStdString().c_str(), newPathPar.toStdString().c_str());
-            //WriteLog(QString("Replacing PARREC PatientID [%1] with [%2]").arg(oldPatientID.toStdString().c_str()).arg(newPatientID.toStdString().c_str()));
-
-            //QTextStream out(&idfile);
-            //out << "Orig ID: [" << oldPatientID << "]  New ID: [" << newPatientID << "]" << endl;
-
-            //WriteLog(QString("File BEFORE replacing [%1]").arg(text));
-            //text.replace(oldPatientID, newPatientID,Qt::CaseInsensitive); // replace text in string
-            //WriteLog(QString("File AFTER replacing [%1]").arg(text));
-
-            /* write the whole string out to a file again */
-            //f.seek(0); // go to the beginning of the file
-            //f.write(text.toUtf8()); // write the new text back to the file
-            //f.close(); // close the file handle.
-
-            /* rename the file */
+            /* add these filepaths to the list of files to be uploaded */
+            uploadList << newPathPar;
+            uploadList << newPathRec;
+            if (ui->chkUseMD5->isChecked()) {
+                QByteArray md5_1 = GetFileChecksum(newPathPar,QCryptographicHash::Md5);
+                md5list << QString("%1").arg(md5_1.toStdString().c_str());
+                QByteArray md5_2 = GetFileChecksum(newPathRec,QCryptographicHash::Md5);
+                md5list << QString("%1").arg(md5_2.toStdString().c_str());
+                ui->tableFiles->setItem(ii,7,new QTableWidgetItem(QString("%1 (par), %2 (rec)").arg(md5_1.toUpper().toStdString().c_str()).arg(md5_2.toUpper().toStdString().c_str())));
+            }
+            else {
+                md5list << "0";
+            }
         }
+        else {
+            newFilePath = f;
+            /* add this filepath to the list of files to be uploaded */
+            uploadList << newFilePath;
+            if (ui->chkUseMD5->isChecked()) {
+                QByteArray md5 = GetFileChecksum(newFilePath,QCryptographicHash::Md5);
+                md5list << QString("%1").arg(md5.toStdString().c_str());;
+                ui->tableFiles->setItem(ii,7,new QTableWidgetItem(QString("%1").arg(md5.toUpper().toStdString().c_str())));
+            }
+            else {
+                md5list << "0";
+            }
+        }
+
+        ui->tableFiles->setCurrentCell(ii,0);
         ui->progAnon->setValue(i+1);
         qApp->processEvents();
     }
 
     /* go through the list of files to be uploaded, and upload them as one big batch */
-    totalUploaded += UploadFileList(uploadList);
+    totalUploaded += UploadFileList(uploadList, md5list);
 
     /* wait for everything to finish before deleting the directory */
     //while (numNetConn > 0) {
     while (isUploading) {
         QTest::qWait(1000);
+        WriteLog("Waiting...");
     }
 
     /* delete the temp directory */
@@ -981,7 +940,7 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
 /* ------------------------------------------------- */
 /* --------- AnonymizeOneFileDumb ------------------ */
 /* ------------------------------------------------- */
-/* borrowed from gdcmanon.cxx                        */
+/* borrowed in its entirety from gdcmanon.cxx        */
 bool MainWindow::AnonymizeOneFileDumb(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode)
 {
 
@@ -1055,6 +1014,8 @@ bool MainWindow::GetConnectionParms(QString &s, QString &u, QString &p)
     QStringList connItems;
     QString connStr;
 
+    WriteLog("Inside GenConnectionParms()");
+
     /* check if any connections exist */
     if (ui->lstConn->count() < 1) {
         ui->lblConnMessage->setText("No connections setup");
@@ -1073,6 +1034,7 @@ bool MainWindow::GetConnectionParms(QString &s, QString &u, QString &p)
     u = connItems[1];
     p = connItems[2];
 
+    WriteLog("Leaving GenConnectionParms()");
     return true;
 }
 
@@ -1080,10 +1042,9 @@ bool MainWindow::GetConnectionParms(QString &s, QString &u, QString &p)
 /* ------------------------------------------------- */
 /* --------- UploadFileList ------------------------ */
 /* ------------------------------------------------- */
-int MainWindow::UploadFileList(QStringList list)
+int MainWindow::UploadFileList(QStringList list, QStringList md5list)
 {
     WriteLog("Entering UploadFileList()");
-    //ui->txtLog->append(QString("Uploading %1 files...").arg(list.size()));
     QString modality = ui->cmbModality->currentData().toString();
 
     if (!GetConnectionParms(connServer, connUsername, connPassword)) {
@@ -1114,6 +1075,11 @@ int MainWindow::UploadFileList(QStringList list)
     if (modality == "PARREC") { loginPart.setBody("UploadNonDICOM"); }
     else if (modality == "EEG") { loginPart.setBody("UploadNonDICOM"); }
     else { loginPart.setBody("UploadDICOM"); }
+    multiPart->append(loginPart);
+    /* numfiles */
+    loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"numfiles\""));
+    loginPart.setBody(QString::number(list.count()).toLatin1());
+    WriteLog(QString::number(list.count()).toLatin1());
     multiPart->append(loginPart);
     /* instanceid */
     loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"instanceid\""));
@@ -1152,34 +1118,39 @@ int MainWindow::UploadFileList(QStringList list)
     else { loginPart.setBody(""); }
     multiPart->append(loginPart);
 
+    QStringList md5stringlist;
     /* loop through the list of files */
     ui->progUpload->setRange(0,100);
     for (int i=0;i<list.size();i++) {
-        //qDebug("UploadFileList [%d] [%s]", i, list[i].toStdString().c_str());
+        qDebug("UploadFileList [%d] [%s]", i, list[i].toStdString().c_str());
         QFile *file = new QFile(list[i]);
         QHttpPart filePart;
         filePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"files[]\"; filename=\""+ file->fileName() + "\""));
-
         file->open(QIODevice::ReadOnly);
         filePart.setBodyDevice(file);
         file->setParent(multiPart); // we cannot delete the file now, so delete it with the multiPart
         multiPart->append(filePart);
+
+        /* create the MD5 list [file|md5,file2|md5,etc] */
+        md5stringlist << file->fileName() + "|" + md5list[i];
     }
 
+    /* add the MD5 list  */
+    QString md5string = md5stringlist.join(",");
+    /* equipment */
+    loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"md5list\""));
+    loginPart.setBody(md5string.toLatin1());
+    multiPart->append(loginPart);
+
+    WriteLog("Should be done setting up the multipart message");
     while (isUploading) {
-        //qDebug("Waiting for current transfers to stop. numNetConn: [%d]", numNetConn);
-        //QTest::qWait(1000);
-        //#ifdef _WIN32_
-        //    _sleep(1);
-        //#elif __linux
-        //    sleep(1);
-        //#endif
-        ui->lblStatus->setText("Waiting for response from server");
+        ui->lblStatus->setText("Waiting for previous upload to complete");
         QTest::qWait(1000);
     }
 
-    //networkManager = new QNetworkAccessManager(this);
+    WriteLog("About to POST");
     QNetworkReply* reply = networkManager->post(request, multiPart);
+    WriteLog("Done with the POST");
     multiPart->setParent(reply); // delete the multiPart with the reply
     numNetConn++;
     isUploading = true;
@@ -1188,7 +1159,6 @@ int MainWindow::UploadFileList(QStringList list)
     connect(reply, SIGNAL(uploadProgress(qint64, qint64)), SLOT(progressChanged(qint64, qint64)));
 
     WriteLog(QString("Finished queueing %1 files for upload...").arg(list.size()));
-    //ui->txtLog->append(QString("Finished queueing %1 files for upload...").arg(list.size()));
 
     /* update the elapsed time */
     ui->lblUploadElapsed->setText(QString("%1").arg(timeConversion(elapsedUploadTime.elapsed())));
@@ -1205,7 +1175,7 @@ int MainWindow::UploadFileList(QStringList list)
 void MainWindow::progressChanged(qint64 a, qint64 b)
 {
     if (b > 0) {
-        //qDebug() << "Uploading " << a  << "/" << b << "%" << (double)a/(double)b*100.0;
+        qDebug() << "Uploading " << a  << "/" << b << "%" << (double)a/(double)b*100.0;
         ui->progUpload->setValue(((double)a/(double)b)*100.0);
         qApp->processEvents();
     }
@@ -1225,6 +1195,7 @@ void MainWindow::progressChanged(qint64 a, qint64 b)
     /* update the elapsed time */
     ui->lblUploadElapsed->setText(QString("%1").arg(timeConversion(elapsedUploadTime.elapsed())));
 
+    WriteLog("Inside progressChanged()");
     ui->lblStatus->setText("Uploading...");
 }
 
@@ -1485,7 +1456,6 @@ void MainWindow::onGetReplyInstanceList()
     }
 
     if (response.trimmed().isEmpty()) { response = tr("No instances available"); }
-    //ui->txtLog->append(response + "\n");
 
     QStringList listItems;
     ui->cmbInstanceID->clear();
@@ -1527,7 +1497,6 @@ void MainWindow::onGetReplyProjectList()
     }
 
     if (response.trimmed().isEmpty()) { response = tr("No projects within this instance"); }
-    //ui->txtLog->append(response + "\n");
 
     /* parse the returned string and populate the drop down menu */
     QStringList listItems;
@@ -1570,7 +1539,6 @@ void MainWindow::onGetReplySiteList()
     }
 
     if (response.trimmed().isEmpty()) { response = tr("No sites available"); }
-    //ui->txtLog->append(response + "\n");
 
     /* parse the returned string and populate the drop down menu */
     QStringList listItems;
@@ -1908,6 +1876,22 @@ QNetworkProxy MainWindow::GetProxy()
         //WriteLog("Proxy should be unset");
     }
     return proxy;
+}
+
+
+/* ------------------------------------------------- */
+/* --------- WriteLog ------------------------------ */
+/* ------------------------------------------------- */
+QByteArray MainWindow::GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm)
+{
+    QFile f(fileName);
+    if (f.open(QFile::ReadOnly)) {
+        QCryptographicHash hash(hashAlgorithm);
+        if (hash.addData(&f)) {
+            return hash.result().toHex();
+        }
+    }
+    return QByteArray();
 }
 
 
