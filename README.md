@@ -24,9 +24,15 @@ This project is for a GUI based program which uploads MRI, EEG, and other binary
 * Go into the ~/nidbuploader/gdcm-win7 directory and open the GDCM.sln file in Visual Studio 2012
 * Go to the **BUILD-->Configuration...** menu option. Change the Active solution to *Release*
 * On the main Visual Studio window, right click the **ALL_BUILD** project and click **Build**
+* Go to the **BUILD-->Configuration...** menu option. Change the Active solution to *Debug*
+* On the main Visual Studio window, right click the **ALL_BUILD** project and click **Build**
 * The gdcm libraries will then be built
  
 **Windows 7 - Build NiDBUPloader**
+
+* Double-click the NiDBUploader.pro file
+* The build kits should already established
+* Select a **Release** build and build it
 
 **Linux - Setup build environment**
 
