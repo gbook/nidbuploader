@@ -1131,6 +1131,12 @@ int MainWindow::UploadFileList(QStringList list, QStringList md5list)
         file->setParent(multiPart); // we cannot delete the file now, so delete it with the multiPart
         multiPart->append(filePart);
 
+        if (!fileExists(list[i])) {
+            qDebug("File does not exist");
+        }
+        else {
+            qDebug("File exists");
+        }
         /* create the MD5 list [file|md5,file2|md5,etc] */
         md5stringlist << file->fileName() + "|" + md5list[i];
     }
@@ -1195,7 +1201,7 @@ void MainWindow::progressChanged(qint64 a, qint64 b)
     /* update the elapsed time */
     ui->lblUploadElapsed->setText(QString("%1").arg(timeConversion(elapsedUploadTime.elapsed())));
 
-    WriteLog("Inside progressChanged()");
+    WriteLog("Leaving progressChanged()");
     ui->lblStatus->setText("Uploading...");
 }
 
@@ -1904,4 +1910,18 @@ void MainWindow::WriteLog(QString msg)
     QTextStream out(&logfile);
     out << "[" << QTime::currentTime().toString() << "] " << msg << endl;
     qDebug() << msg;
+}
+
+
+/* ------------------------------------------------- */
+/* --------- fileExists ---------------------------- */
+/* ------------------------------------------------- */
+bool MainWindow::fileExists(QString path) {
+    QFileInfo checkFile(path);
+    // check if file exists and if yes: Is it really a file and no directory?
+    if (checkFile.exists() && checkFile.isFile()) {
+        return true;
+    } else {
+        return false;
+    }
 }

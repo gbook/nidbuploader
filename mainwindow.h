@@ -66,6 +66,7 @@ public:
     QString timeConversion(int msecs);
     QString humanReadableSize(quint64 intSize);
     QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
+    bool fileExists(QString path);
 
     void StartTransaction();
     void EndTransaction();
