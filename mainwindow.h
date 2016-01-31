@@ -166,8 +166,6 @@ private slots:
 
     void on_btnLoadEquipmentIDs_clicked();
 
-    void on_chkUseProxy_clicked();
-
 private:
     Ui::MainWindow *ui;
 };
