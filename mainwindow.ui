@@ -1976,6 +1976,16 @@
        </spacer>
       </item>
       <item>
+       <widget class="QPushButton" name="btnResendFailedObjects">
+        <property name="toolTip">
+         <string>This will try to resend all objects that were not uploaded successfully</string>
+        </property>
+        <property name="text">
+         <string>Resend Failed Objects</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="btnUploadAll">
         <property name="toolTip">
          <string>Uploads and anonymizes if necessary</string>

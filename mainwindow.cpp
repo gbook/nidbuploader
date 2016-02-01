@@ -49,6 +49,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->cmbProxyType->addItem("FtpCaching", "ftpcaching");
 
     SetTempDir();
+
+    /* disable the upload button */
+    ui->btnUploadAll->setEnabled(false);
+    ui->btnResendFailedObjects->setEnabled(false);
+
     WriteLog("Leaving MainWindow()");
 }
 
@@ -252,36 +257,52 @@ void MainWindow::onGetReplyUpload()
         } else {
             response = tr("Error: %1 status: %2").arg(reply->errorString(), reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toString());
         }
-
         reply->deleteLater();
     }
 
-    if (response.trimmed().isEmpty()) {
-        response = tr("Unable to retrieve POST response");
-    }
+    if (response.trimmed().isEmpty()) { response = tr("Received empty POST response"); }
 
     WriteLog("OnGetReplyUpload(" + response + ")");
 
-    WriteLog(QString("(Z1) numFilesSentTotal: [%1] numFilesSentSuccess: [%2] numFilesSentFail: [%3]").arg(numFilesSentTotal).arg(numFilesSentSuccess).arg(numFilesSentFail));
+    /* parse the response. Should be comma delimited. First item in list is response:
+        SUCCESS, LOGINERROR, UPLOADERROR, */
+    QStringList md5list = response.split(",");
+    QString responsecode = md5list.takeFirst();
 
-    /* set the last sent statistics */
-    numFilesSentSuccess += numFilesLastSend;
-    numBytesSentSuccess += numBytesLastSend;
-    numFilesLastSend = 0;
-    numBytesLastSend = 0;
-    ui->lblUploadFilesSentSuccess->setText(QString("%1").arg(numFilesSentSuccess));
-    numNetConn--;
-    WriteLog(QString("numNetConn (B): %1").arg(numNetConn));
-
-    QBrush colorGreen(Qt::green);
-    for (int i=0;i<lastUploadList.count();i++) {
-        int ii = lastUploadList[i];
-        ui->tableFiles->item(ii,1)->setForeground(colorGreen);
-        ui->tableFiles->item(ii,1)->setText("Upload success");
+    if (responsecode == "SUCCESS") {
+        /* loop through the list of sent files (local) and see if the MD5 is in the received list of MD5s */
+        for (int i=0;i<lastUploadList.count();i++) {
+            int ii = lastUploadList[i];
+            QString md5 = ui->tableFiles->item(ii,8)->text();
+            WriteLog(QString("Checking if MD5 [%1] was received by remote server").arg(md5));
+            if (md5list.contains(md5,Qt::CaseInsensitive)) {
+                ui->tableFiles->item(ii,1)->setForeground(QBrush(Qt::green));
+                ui->tableFiles->item(ii,1)->setText("Received");
+                numFilesSentSuccess++;
+            }
+            else {
+                ui->tableFiles->item(ii,1)->setForeground(QBrush(Qt::red));
+                ui->tableFiles->item(ii,1)->setText("MD5 Error");
+                numFilesSentFail++;
+            }
+        }
+        numBytesSentSuccess += numBytesLastSend;
+        ui->lblUploadFilesSentSuccess->setText(QString("%1").arg(numFilesSentSuccess));
+    }
+    else {
+        /* got a response other than 'success'... so we can't assume any of the files were received */
+        for (int i=0;i<lastUploadList.count();i++) {
+            int ii = lastUploadList[i];
+            ui->tableFiles->item(ii,1)->setForeground(QBrush(Qt::red));
+            ui->tableFiles->item(ii,1)->setText("Upload Error");
+            numFilesSentFail++;
+        }
     }
 
-    WriteLog(QString("(Z2) numFilesSentTotal: [%1] numFilesSentSuccess: [%2] numFilesSentFail: [%3]").arg(numFilesSentTotal).arg(numFilesSentSuccess).arg(numFilesSentFail));
-
+    /* set the last sent statistics */
+    numFilesLastSend = 0;
+    numBytesLastSend = 0;
+    numNetConn--;
     WriteLog("Leaving onGetReplyUpload()");
 }
 
@@ -338,14 +359,11 @@ void MainWindow::on_btnSelectDataDir_clicked()
 /* ------------------------------------------------- */
 void MainWindow::on_btnSearch_clicked()
 {
-    /* disable the upload button */
-    ui->btnUploadAll->setEnabled(false);
-
     QApplication::setOverrideCursor(Qt::WaitCursor);
     scanDirIter(QDir(ui->txtDataDir->text()));
     QApplication::restoreOverrideCursor();
 
-    /* enable the upload */
+    /* enable the upload button */
     ui->btnUploadAll->setEnabled(true);
 }
 
@@ -579,6 +597,17 @@ void MainWindow::on_btnTmpDir_clicked()
 /* ------------------------------------------------- */
 void MainWindow::on_btnUploadAll_clicked()
 {
+    DoUpload(true);
+
+    /* enable this resend button */
+    ui->btnResendFailedObjects->setEnabled(true);
+}
+
+
+/* ------------------------------------------------- */
+/* --------- DoUpload ------------------------------ */
+/* ------------------------------------------------- */
+void MainWindow::DoUpload(bool uploadAll) {
     networkManager->setProxy(GetProxy());
 
     WriteLog("Entering on_btnUploadAll_clicked()");
@@ -648,29 +677,34 @@ void MainWindow::on_btnUploadAll_clicked()
     ui->progTotal->setRange(0,rowCount);
     for (int i=0; i<rowCount; i++){
 
-        /* add this item to the list */
-        fileList.append(i);
-        currentUploadSize += ui->tableFiles->item(i,7)->text().toInt();
+        /* check if its status */
+        QString status = ui->tableFiles->item(i,1)->text();
+        if (uploadAll || ( status.contains("error",Qt::CaseInsensitive) && !uploadAll ) ) {
 
-        ui->lblStatus->setText("Preparing file...");
+            /* add this item to the list */
+            fileList.append(i);
+            currentUploadSize += ui->tableFiles->item(i,7)->text().toInt();
 
-        int compareSize;
-        if ((i+1) < rowCount) {
-            compareSize = currentUploadSize + ui->tableFiles->item(i+1,7)->text().toInt();
-        }
-        else {
-            compareSize = currentUploadSize;
-        }
-        /* more than 500MB or 300 files, split it up */
-        if ((compareSize > 500000000) || (fileList.size() >= 300)) {
-            AnonymizeAndUpload(fileList, isDICOM, isPARREC);
-            /* clear the list */
-            fileList.clear();
-            currentUploadSize = 0;
-        }
+            ui->lblStatus->setText("Preparing file...");
 
-        ui->progTotal->setValue(i+1);
-        qApp->processEvents();
+            int compareSize;
+            if ((i+1) < rowCount) {
+                compareSize = currentUploadSize + ui->tableFiles->item(i+1,7)->text().toInt();
+            }
+            else {
+                compareSize = currentUploadSize;
+            }
+            /* more than 500MB or 300 files, split it up */
+            if ((compareSize > 500000000) || (fileList.size() >= 300)) {
+                AnonymizeAndUpload(fileList, isDICOM, isPARREC);
+                /* clear the list */
+                fileList.clear();
+                currentUploadSize = 0;
+            }
+
+            ui->progTotal->setValue(i+1);
+            qApp->processEvents();
+        }
     }
     /* anonymize and upload the remaining files */
     AnonymizeAndUpload(fileList, isDICOM, isPARREC);
@@ -680,8 +714,8 @@ void MainWindow::on_btnUploadAll_clicked()
     ui->lblStatus->setText("Ending upload transaction");
 
     QApplication::restoreOverrideCursor();
-}
 
+}
 
 /* ------------------------------------------------- */
 /* --------- AnonymizeAndUpload -------------------- */
@@ -1104,16 +1138,16 @@ int MainWindow::UploadFileList(QStringList list, QStringList md5list)
         file->setParent(multiPart); // we cannot delete the file now, so delete it with the multiPart
         multiPart->append(filePart);
 
-        if (!fileExists(list[i])) {
-            qDebug("File does not exist");
-        }
-        else {
-            qDebug("File exists");
-        }
+        //if (!fileExists(list[i])) {
+        //    qDebug("File does not exist");
+        //}
+        //else {
+        //    qDebug("File exists");
+        //}
         /* create the MD5 list [file|md5,file2|md5,etc] */
         QFileInfo fileInfo(file->fileName());
         QString filename(fileInfo.fileName());
-        md5stringlist << filename + "|" + md5list[i];
+        md5stringlist << md5list[i];
     }
 
     /* add the MD5 list  */
@@ -1315,7 +1349,6 @@ void MainWindow::on_btnLoadProjectIDs_clicked()
             loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"instance\""));
             loginPart.setBody(ui->cmbInstanceID->currentData().toString().toLatin1()); multiPart->append(loginPart);
 
-            //networkManager = new QNetworkAccessManager(this);
             QNetworkReply* reply = networkManager->post(request, multiPart);
             multiPart->setParent(reply); // delete the multiPart with the reply
             connect(reply, SIGNAL(finished()), this, SLOT(onGetReplyProjectList()));
@@ -1609,7 +1642,6 @@ void MainWindow::StartTransaction()
             loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"action\""));
             loginPart.setBody("startTransaction"); multiPart->append(loginPart);
 
-            //networkManager = new QNetworkAccessManager(this);
             QNetworkReply* reply = networkManager->post(request, multiPart);
             multiPart->setParent(reply); // delete the multiPart with the reply
             connect(reply, SIGNAL(finished()), this, SLOT(onGetReplyStartTransaction()));
@@ -1877,4 +1909,13 @@ bool MainWindow::fileExists(QString path) {
     } else {
         return false;
     }
+}
+
+
+/* ------------------------------------------------- */
+/* --------- on_btnResendFailedObjects_clicked ----- */
+/* ------------------------------------------------- */
+void MainWindow::on_btnResendFailedObjects_clicked()
+{
+    DoUpload(false);
 }

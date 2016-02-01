@@ -67,6 +67,7 @@ public:
     QString humanReadableSize(quint64 intSize);
     QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
     bool fileExists(QString path);
+    void DoUpload(bool uploadAll);
 
     void StartTransaction();
     void EndTransaction();
@@ -165,6 +166,8 @@ private slots:
     void on_btnRemoveSelected_clicked();
 
     void on_btnLoadEquipmentIDs_clicked();
+
+    void on_btnResendFailedObjects_clicked();
 
 private:
     Ui::MainWindow *ui;
