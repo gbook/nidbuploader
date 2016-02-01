@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>865</width>
-    <height>848</height>
+    <width>1371</width>
+    <height>921</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -354,6 +354,9 @@
          </item>
          <item>
           <widget class="QTableWidget" name="tableFiles">
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
            <property name="alternatingRowColors">
             <bool>true</bool>
            </property>
@@ -373,7 +376,7 @@
             <bool>false</bool>
            </property>
            <property name="columnCount">
-            <number>9</number>
+            <number>10</number>
            </property>
            <attribute name="horizontalHeaderDefaultSectionSize">
             <number>120</number>
@@ -383,7 +386,7 @@
            </attribute>
            <column>
             <property name="text">
-             <string>File</string>
+             <string>Original File</string>
             </property>
             <property name="font">
              <font>
@@ -424,7 +427,12 @@
            </column>
            <column>
             <property name="text">
-             <string>MD5 hash</string>
+             <string>Anon File</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Anon MD5 hash</string>
             </property>
            </column>
            <column>
@@ -1904,6 +1912,10 @@
           <property name="font">
            <font>
             <pointsize>11</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+            <stylestrategy>PreferAntialias</stylestrategy>
+            <kerning>true</kerning>
            </font>
           </property>
           <property name="text">
@@ -1985,7 +1997,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>865</width>
+     <width>1371</width>
      <height>21</height>
     </rect>
    </property>
