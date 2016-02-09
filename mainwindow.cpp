@@ -272,10 +272,27 @@ void MainWindow::onGetReplyUpload()
     if (responsecode == "SUCCESS") {
         /* loop through the list of sent files (local) and see if the MD5 is in the received list of MD5s */
         for (int i=0;i<lastUploadList.count();i++) {
+
+            /* get the MD5(s) from the tableview and check if they were received */
             int ii = lastUploadList[i];
             QString md5 = ui->tableFiles->item(ii,8)->text();
             WriteLog(QString("Checking if MD5 [%1] was received by remote server").arg(md5));
+            bool found = false;
             if (md5list.contains(md5,Qt::CaseInsensitive)) {
+                found = true;
+            }
+            if (md5.contains(",")) {
+                /* the tableview contains a comma, and therefor more than one MD5. Need to check all of them */
+                QStringList multiMD5list = md5.split(",");
+                found = true;
+                foreach (const QString &str, multiMD5list) {
+                    if (!md5list.contains(str)) {
+                        found = false;
+                    }
+                }
+            }
+            /* populate the table if the MD5 is valid or not */
+            if (found) {
                 ui->tableFiles->item(ii,1)->setForeground(QBrush(Qt::green));
                 ui->tableFiles->item(ii,1)->setText("Received");
                 numFilesSentSuccess++;
@@ -294,7 +311,7 @@ void MainWindow::onGetReplyUpload()
         for (int i=0;i<lastUploadList.count();i++) {
             int ii = lastUploadList[i];
             ui->tableFiles->item(ii,1)->setForeground(QBrush(Qt::red));
-            ui->tableFiles->item(ii,1)->setText("Upload Error");
+            ui->tableFiles->item(ii,1)->setText(responsecode);
             numFilesSentFail++;
         }
     }
@@ -896,7 +913,7 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
                 md5list << QString("%1").arg(md5_1.toStdString().c_str());
                 QByteArray md5_2 = GetFileChecksum(newPathRec,QCryptographicHash::Md5);
                 md5list << QString("%1").arg(md5_2.toStdString().c_str());
-                ui->tableFiles->setItem(ii,8,new QTableWidgetItem(QString("%1 (par), %2 (rec)").arg(md5_1.toUpper().toStdString().c_str()).arg(md5_2.toUpper().toStdString().c_str())));
+                ui->tableFiles->setItem(ii,8,new QTableWidgetItem(QString("%1,%2").arg(md5_1.toUpper().toStdString().c_str()).arg(md5_2.toUpper().toStdString().c_str())));
             }
             else {
                 md5list << "0";
@@ -1079,8 +1096,8 @@ int MainWindow::UploadFileList(QStringList list, QStringList md5list)
     multiPart->append(loginPart);
     /* action */
     loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"action\""));
-    if (modality == "PARREC") { loginPart.setBody("UploadNonDICOM"); }
-    else if (modality == "EEG") { loginPart.setBody("UploadNonDICOM"); }
+    if (modality == "PARREC") { loginPart.setBody("UploadDICOM"); }
+    else if (modality == "EEG") { loginPart.setBody("UploadDICOM"); }
     else { loginPart.setBody("UploadDICOM"); }
     multiPart->append(loginPart);
     /* numfiles */
@@ -1137,13 +1154,6 @@ int MainWindow::UploadFileList(QStringList list, QStringList md5list)
         filePart.setBodyDevice(file);
         file->setParent(multiPart); // we cannot delete the file now, so delete it with the multiPart
         multiPart->append(filePart);
-
-        //if (!fileExists(list[i])) {
-        //    qDebug("File does not exist");
-        //}
-        //else {
-        //    qDebug("File exists");
-        //}
         /* create the MD5 list [file|md5,file2|md5,etc] */
         QFileInfo fileInfo(file->fileName());
         QString filename(fileInfo.fileName());
