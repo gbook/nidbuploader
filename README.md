@@ -56,18 +56,19 @@ Within QTCreator, build and test the project. Make sure it is a Release build.
 
 **Zip the package** (Linux)
 
-QTCreator will create a directory called something like `build-NiDBUploader-Desktop_Qt_5_3_GCC_64bit_release`. The NiDBUploader binaries will be in there. The /opt/Qt/5.3 directory may be different.
+QTCreator will create a directory called something like `build-NiDBUploader-Desktop_Qt_5_6_GCC_64bit-Release`. The NiDBUploader binaries will be in there. The /opt/Qt/5.3 directory may be different.
 
-    cp nidbuploader/NiDBUploader.sh build-NiDBUploader-Desktop_Qt_5_3_GCC_64bit_release
-    cd build-NiDBUploader-Desktop_Qt_5_3_GCC_64bit_release
+    cp nidbuploader/NiDBUploader.sh build-NiDBUploader-Desktop_Qt_5_6_GCC_64bit-Release
+    cd build-NiDBUploader-Desktop_Qt_5_6_GCC_64bit-Release
     chmod 777 NiDBUploader.sh
     cp ../NiDBUploader/gdcmbin/bin/* .
     mkdir platforms
     cd platforms
-    cp /opt/Qt/5.3/gcc_64/plugins/platforms/* .
-    cp /opt/Qt/5.3/gcc_64/lib/libQt5DBus.so.5 .
-    cp /opt/Qt/5.3/gcc_64/lib/libQt5Gui.so.5 .
-    cp /opt/Qt/5.3/gcc_64/lib/libQt5Core.so.5 .
-    cp /opt/Qt/5.3/gcc_64/lib/libicu* .
+    cp /opt/Qt/5.6/gcc_64/plugins/platforms/* .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5DBus.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5Gui.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5Core.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQtWidgets.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libicu* .
     cd ../..
-    zip -r NiDBUploader-<LinuxVer>-<builddate>.zip build-NiDBUploader-Desktop_Qt_5_3_GCC_64bit_release/*
+    zip -r NiDBUploader-<LinuxVer>-<builddate>.zip build-NiDBUploader-Desktop_Qt_5_6_GCC_64bit-Release/*
