@@ -68,9 +68,18 @@ QTCreator will create a directory called something like `build-NiDBUploader-Desk
     cp /opt/Qt/5.6/gcc_64/lib/libQt5DBus.so.5 .
     cp /opt/Qt/5.6/gcc_64/lib/libQt5Gui.so.5 .
     cp /opt/Qt/5.6/gcc_64/lib/libQt5Core.so.5 .
-    cp /opt/Qt/5.6/gcc_64/lib/libQtWidgets.so.5 .
-    cp /opt/Qt/5.6/gcc_64/lib/libQtNetwork.so.5 .
-    cp /opt/Qt/5.6/gcc_64/lib/libQtTest.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5Widgets.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5Network.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5Test.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libicu* .
+    cd ..
+    cp /opt/Qt/5.6/gcc_64/plugins/platforms/* .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5DBus.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5Gui.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5Core.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5Widgets.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5Network.so.5 .
+    cp /opt/Qt/5.6/gcc_64/lib/libQt5Test.so.5 .
     cp /opt/Qt/5.6/gcc_64/lib/libicu* .
     cd ../..
     zip -r NiDBUploader-<LinuxVer>-<builddate>.zip build-NiDBUploader-Desktop_Qt_5_6_GCC_64bit-Release/*
