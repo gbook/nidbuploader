@@ -92,7 +92,7 @@ void MainWindow::PopulateModality() {
     ui->cmbModality->addItem("PET (DICOM)","PET");
     ui->cmbModality->addItem("Phillips Imaging (.par/.rec)", "PARREC");
     ui->cmbModality->addItem("EEG (.cnt .dat .3dd)", "EEG");
-    ui->cmbModality->addItem("Eye Tracking", "ET");
+    ui->cmbModality->addItem("Eye Tracking (.edf)", "ET");
     ui->cmbModality->addItem("VIDEO (.wmv .avi .mpg .mpeg .mp4 .mkv)", "VIDEO");
     WriteLog("Leaving PopulateModality()");
 }
@@ -461,6 +461,15 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
         if ((f.toLower().endsWith(".cnt")) || (f.toLower().endsWith(".dat")) || (f.toLower().endsWith(".3dd"))) {
             fileType = "EEG";
             fileModality = "EEG";
+            QFileInfo fn = QFileInfo(f);
+            QStringList parts = fn.baseName().split("_");
+            filePatientID = parts[0];
+        }
+        /* check if ET */
+        else if (f.toLower().endsWith(".edf")) {
+            //WriteLog("Found an analyze or Nifti image");
+            fileType = "ET";
+            fileModality = "ET";
             QFileInfo fn = QFileInfo(f);
             QStringList parts = fn.baseName().split("_");
             filePatientID = parts[0];
