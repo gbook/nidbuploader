@@ -424,6 +424,10 @@ void MainWindow::scanDirIter(QDir dir)
             if ((fileType == "EEG") && (modality == "EEG")) {
                 AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
             }
+            if ((fileType == "ET") && (modality == "ET")) {
+                WriteLog("scanDirIter says this file is an ET");
+                AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
+            }
             if ((fileType == "NIFTI") && (modality == "NIFTI")) {
                 AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
             }
@@ -459,6 +463,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
     else {
         /* check if EEG, and Polhemus */
         if ((f.toLower().endsWith(".cnt")) || (f.toLower().endsWith(".dat")) || (f.toLower().endsWith(".3dd"))) {
+            WriteLog("Found an EEG file");
             fileType = "EEG";
             fileModality = "EEG";
             QFileInfo fn = QFileInfo(f);
@@ -467,7 +472,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
         }
         /* check if ET */
         else if (f.toLower().endsWith(".edf")) {
-            //WriteLog("Found an analyze or Nifti image");
+            WriteLog("Found an ET file");
             fileType = "ET";
             fileModality = "ET";
             QFileInfo fn = QFileInfo(f);
@@ -586,7 +591,7 @@ bool MainWindow::AddFoundFile(QDirIterator *it, QString f, QString fType, QStrin
     ui->lblFileElapsedTime->setText(QString("%1").arg(timeConversion(elapsedFileSearchTime.elapsed())));
 
     /* check to see if the filename is in the correct format */
-    if (ui->cmbModality->currentData() == "EEG") {
+    if ((ui->cmbModality->currentData() == "EEG") || (ui->cmbModality->currentData() == "ET")) {
         QString filebasename = QFileInfo(f).baseName();
         QStringList parts = filebasename.split("_");
 
@@ -954,7 +959,7 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
     /* wait for everything to finish before deleting the directory */
     while (isUploading) {
         QTest::qWait(1000);
-        WriteLog("Waiting...");
+        //WriteLog("Waiting...");
     }
 
     /* delete the temp directory */
@@ -1106,7 +1111,7 @@ int MainWindow::UploadFileList(QStringList list, QStringList md5list)
     /* action */
     loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"action\""));
     if (modality == "PARREC") { loginPart.setBody("UploadDICOM"); }
-    else if (modality == "EEG") { loginPart.setBody("UploadDICOM"); }
+    else if ((modality == "EEG") || (modality == "ET")) { loginPart.setBody("UploadDICOM"); }
     else { loginPart.setBody("UploadDICOM"); }
     multiPart->append(loginPart);
     /* numfiles */
@@ -1144,11 +1149,12 @@ int MainWindow::UploadFileList(QStringList list, QStringList md5list)
     multiPart->append(loginPart);
     /* dataformat */
     loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"dataformat\""));
-    if (modality == "DICOM") { loginPart.setBody("dicom"); }
-    else if (modality == "PARREC") { loginPart.setBody("parrec"); }
-    else if (modality == "EEG") { loginPart.setBody("eeg"); }
-    else if (modality == "NIFTI") { loginPart.setBody("nifti"); }
-    else { loginPart.setBody(""); }
+    if (modality == "DICOM") { loginPart.setBody("dicom"); WriteLog("dataformat set to [dicom]"); }
+    else if (modality == "PARREC") { loginPart.setBody("parrec"); WriteLog("dataformat set to [parrec]"); }
+    else if (modality == "EEG") { loginPart.setBody("eeg"); WriteLog("dataformat set to [eeg]"); }
+    else if (modality == "ET") { loginPart.setBody("et"); WriteLog("dataformat set to [et]"); }
+    else if (modality == "NIFTI") { loginPart.setBody("nifti"); WriteLog("dataformat set to [nifti]"); }
+    else { loginPart.setBody(""); WriteLog("dataformat set to []"); }
     multiPart->append(loginPart);
 
     QStringList md5stringlist;
@@ -1207,7 +1213,7 @@ int MainWindow::UploadFileList(QStringList list, QStringList md5list)
 void MainWindow::progressChanged(qint64 a, qint64 b)
 {
     if (b > 0) {
-        qDebug() << "Uploading " << a  << "/" << b << "%" << (double)a/(double)b*100.0;
+        //qDebug() << "Uploading " << a  << "/" << b << "%" << (double)a/(double)b*100.0;
         ui->progUpload->setValue(((double)a/(double)b)*100.0);
         //qApp->processEvents(); // for some reason when this is uncommented, the upload freezes
     }
