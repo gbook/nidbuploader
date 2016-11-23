@@ -377,7 +377,9 @@ void MainWindow::on_btnSelectDataDir_clicked()
 void MainWindow::on_btnSearch_clicked()
 {
     QApplication::setOverrideCursor(Qt::WaitCursor);
+    WriteLog("Starting search of directory [" + ui->txtDataDir->text() + "]");
     scanDirIter(QDir(ui->txtDataDir->text()));
+    WriteLog("Finished search of directory [" + ui->txtDataDir->text() + "]");
     QApplication::restoreOverrideCursor();
 
     /* enable the upload button */
@@ -401,11 +403,14 @@ void MainWindow::scanDirIter(QDir dir)
     startFileSearchTime = QDateTime::currentDateTime();
     ui->lblFileStartTime->setText(startFileSearchTime.toString(Qt::TextDate));
 
+    WriteLog("Searching directory [" + dir.path() + "]");
+
     /* iterate through all files in the parent directory */
     while (iterator.hasNext()) {
         iterator.next();
         if (!iterator.fileInfo().isDir()) {
             fullfile = iterator.filePath();
+            WriteLog("Came across file [" + fullfile + "]...");
             /* check the file type */
             GetFileType(fullfile, fileType, fileModality, filePatientID);
             if (fileType == "DICOM") {
@@ -441,6 +446,7 @@ void MainWindow::scanDirIter(QDir dir)
 /* ------------------------------------------------- */
 void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID)
 {
+    WriteLog("In GetFileType(" + f + ")");
     fileModality = QString("");
     gdcm::Reader r;
     r.SetFileName(f.toStdString().c_str());
@@ -461,9 +467,10 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
         filePatientID = QString(s.c_str());
     }
     else {
+        WriteLog("[" + f + "] is not a DICOM file");
         /* check if EEG, and Polhemus */
         if ((f.toLower().endsWith(".cnt")) || (f.toLower().endsWith(".dat")) || (f.toLower().endsWith(".3dd"))) {
-            WriteLog("Found an EEG file");
+            WriteLog("Found an EEG file [" + f + "]");
             fileType = "EEG";
             fileModality = "EEG";
             QFileInfo fn = QFileInfo(f);
@@ -472,7 +479,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
         }
         /* check if ET */
         else if (f.toLower().endsWith(".edf")) {
-            WriteLog("Found an ET file");
+            WriteLog("Found an ET file [" + f + "]");
             fileType = "ET";
             fileModality = "ET";
             QFileInfo fn = QFileInfo(f);
@@ -481,7 +488,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
         }
         /* check if MR (Non-DICOM) analyze or nifti */
         else if ((f.toLower().endsWith(".nii")) || (f.toLower().endsWith(".nii.gz")) || (f.toLower().endsWith(".hdr")) || (f.toLower().endsWith(".img"))) {
-            //WriteLog("Found an analyze or Nifti image");
+            WriteLog("Found an analyze or Nifti image [" + f + "]");
             fileType = "NIFTI";
             fileModality = "NIFTI";
             QFileInfo fn = QFileInfo(f);
@@ -490,6 +497,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
         }
         /* check if par/rec */
         else if (f.endsWith(".par")) {
+            WriteLog("Found a PARREC image [" + f + "]");
             fileType = "PARREC";
             fileModality = "PARREC";
 
@@ -512,6 +520,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
             }
         }
         else {
+            WriteLog("Filetype is unknown [" + f + "]");
             fileType = "Unknown";
         }
     }
