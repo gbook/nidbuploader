@@ -91,7 +91,7 @@ void MainWindow::PopulateModality() {
     ui->cmbModality->addItem("CT (DICOM)","CT");
     ui->cmbModality->addItem("PET (DICOM)","PET");
     ui->cmbModality->addItem("Phillips Imaging (.par/.rec)", "PARREC");
-    ui->cmbModality->addItem("EEG (.cnt .dat .3dd)", "EEG");
+    ui->cmbModality->addItem("EEG (.cnt .dat .3dd .eeg)", "EEG");
     ui->cmbModality->addItem("Eye Tracking (.edf)", "ET");
     ui->cmbModality->addItem("VIDEO (.wmv .avi .mpg .mpeg .mp4 .mkv)", "VIDEO");
     WriteLog("Leaving PopulateModality()");
@@ -450,7 +450,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
     fileModality = QString("");
     gdcm::Reader r;
     r.SetFileName(f.toStdString().c_str());
-    if (r.Read()) {
+    if (r.CanRead()) {
         //qDebug("%s is a DICOM file",f.toStdString().c_str());
         fileType = QString("DICOM");
         gdcm::StringFilter sf;
@@ -469,7 +469,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
     else {
         WriteLog("[" + f + "] is not a DICOM file");
         /* check if EEG, and Polhemus */
-        if ((f.toLower().endsWith(".cnt")) || (f.toLower().endsWith(".dat")) || (f.toLower().endsWith(".3dd"))) {
+        if ((f.toLower().endsWith(".cnt")) || (f.toLower().endsWith(".dat")) || (f.toLower().endsWith(".3dd")) || (f.toLower().endsWith(".eeg"))) {
             WriteLog("Found an EEG file [" + f + "]");
             fileType = "EEG";
             fileModality = "EEG";
@@ -723,17 +723,18 @@ void MainWindow::DoUpload(bool uploadAll) {
 
             /* add this item to the list */
             fileList.append(i);
-            currentUploadSize += ui->tableFiles->item(i,7)->text().toInt();
+            currentUploadSize += ui->tableFiles->item(i,9)->text().toInt();
 
             ui->lblStatus->setText("Preparing file...");
 
             int compareSize;
             if ((i+1) < rowCount) {
-                compareSize = currentUploadSize + ui->tableFiles->item(i+1,7)->text().toInt();
+                compareSize = currentUploadSize + ui->tableFiles->item(i+1,9)->text().toInt();
             }
             else {
                 compareSize = currentUploadSize;
             }
+            WriteLog("Total size so far... [" + QString::number(compareSize) + "] [" + ui->tableFiles->item(i+1,9)->text() + "]");
             /* more than 500MB or 300 files, split it up */
             if ((compareSize > 500000000) || (fileList.size() >= 300)) {
                 AnonymizeAndUpload(fileList, isDICOM, isPARREC);
