@@ -612,6 +612,25 @@
                  </property>
                 </widget>
                </item>
+               <item>
+                <widget class="QCheckBox" name="chkDebug">
+                 <property name="maximumSize">
+                  <size>
+                   <width>80</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <weight>50</weight>
+                   <bold>false</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Debug</string>
+                 </property>
+                </widget>
+               </item>
               </layout>
              </item>
              <item>
@@ -2008,7 +2027,7 @@
      <x>0</x>
      <y>0</y>
      <width>1371</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
   </widget>

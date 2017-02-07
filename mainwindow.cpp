@@ -93,7 +93,6 @@ void MainWindow::PopulateModality() {
     ui->cmbModality->addItem("Phillips Imaging (.par/.rec)", "PARREC");
     ui->cmbModality->addItem("EEG (.cnt .dat .3dd .eeg)", "EEG");
     ui->cmbModality->addItem("Eye Tracking (.edf)", "ET");
-    ui->cmbModality->addItem("VIDEO (.wmv .avi .mpg .mpeg .mp4 .mkv)", "VIDEO");
     WriteLog("Leaving PopulateModality()");
 }
 
@@ -410,31 +409,45 @@ void MainWindow::scanDirIter(QDir dir)
         iterator.next();
         if (!iterator.fileInfo().isDir()) {
             fullfile = iterator.filePath();
-            WriteLog("Came across file [" + fullfile + "]...");
+            //WriteLog("Came across file [" + fullfile + "]...");
             /* check the file type */
             GetFileType(fullfile, fileType, fileModality, filePatientID);
             if (fileType == "DICOM") {
+                //WriteLog("Filetype is DICOM");
+                // the modality can be DICOM if the user wants to search for all DICOM images, regardless of modality
                 if (modality == "DICOM") {
                     AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
+                    //WriteLog("Modality is DICOM");
                 }
                 else {
+                    //WriteLog("Modality is not DICOM. Checking if modality [" + modality.toString() + "] equals fileModality [" + fileModality + "]");
                     if (modality == fileModality) {
                         AddFoundFile(&iterator,fullfile,fileType,modality.toString(), filePatientID);
+                        //WriteLog("Modality is same as fileModality");
+                    }
+                    else {
+                        //WriteLog("modality and fileModality do not match");
                     }
                 }
             }
-            if ((fileType == "PARREC") && (modality == "PARREC")) {
+            else if ((fileType == "PARREC") && (modality == "PARREC")) {
+                //WriteLog("fileType and modality are PARREC");
                 AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
             }
-            if ((fileType == "EEG") && (modality == "EEG")) {
+            else if ((fileType == "EEG") && (modality == "EEG")) {
+                //WriteLog("fileType and modality are EEG");
                 AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
             }
-            if ((fileType == "ET") && (modality == "ET")) {
-                WriteLog("scanDirIter says this file is an ET");
+            else if ((fileType == "ET") && (modality == "ET")) {
+                //WriteLog("fileType and modality are ET");
                 AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
             }
-            if ((fileType == "NIFTI") && (modality == "NIFTI")) {
+            else if ((fileType == "NIFTI") && (modality == "NIFTI")) {
+                //WriteLog("fileType and modality are Nifti");
                 AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
+            }
+            else {
+                WriteLog("fileType [" + fileType + "] and modality [" + modality.toString() + "] did not match");
             }
         }
     }
@@ -450,7 +463,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
     fileModality = QString("");
     gdcm::Reader r;
     r.SetFileName(f.toStdString().c_str());
-    if (r.CanRead()) {
+    if (r.Read()) {
         //qDebug("%s is a DICOM file",f.toStdString().c_str());
         fileType = QString("DICOM");
         gdcm::StringFilter sf;
@@ -717,9 +730,13 @@ void MainWindow::DoUpload(bool uploadAll) {
     ui->progTotal->setRange(0,rowCount);
     for (int i=0; i<rowCount; i++){
 
+        WriteLog(QString("in loop, working on row %1").arg(i));
+
         /* check if its status */
         QString status = ui->tableFiles->item(i,1)->text();
+        WriteLog("A");
         if (uploadAll || ( status.contains("error",Qt::CaseInsensitive) && !uploadAll ) ) {
+            WriteLog("B");
 
             /* add this item to the list */
             fileList.append(i);
@@ -730,11 +747,11 @@ void MainWindow::DoUpload(bool uploadAll) {
             int compareSize;
             if ((i+1) < rowCount) {
                 compareSize = currentUploadSize + ui->tableFiles->item(i+1,9)->text().toInt();
+                WriteLog("Total size so far... [" + QString::number(compareSize) + "] [" + ui->tableFiles->item(i+1,9)->text() + "]");
             }
             else {
                 compareSize = currentUploadSize;
             }
-            WriteLog("Total size so far... [" + QString::number(compareSize) + "] [" + ui->tableFiles->item(i+1,9)->text() + "]");
             /* more than 500MB or 300 files, split it up */
             if ((compareSize > 500000000) || (fileList.size() >= 300)) {
                 AnonymizeAndUpload(fileList, isDICOM, isPARREC);
@@ -744,9 +761,15 @@ void MainWindow::DoUpload(bool uploadAll) {
             }
 
             ui->progTotal->setValue(i+1);
+            WriteLog("Before qApp->processEvents()");
             qApp->processEvents();
+            WriteLog("After qApp->processEvents()");
         }
+
+        WriteLog(QString("in loop, done with row %1").arg(i));
+
     }
+    WriteLog("About to enter AnonymizeAndUpload()");
     /* anonymize and upload the remaining files */
     AnonymizeAndUpload(fileList, isDICOM, isPARREC);
 
@@ -1145,6 +1168,11 @@ int MainWindow::UploadFileList(QStringList list, QStringList md5list)
     loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"equipmentid\""));
     loginPart.setBody(ui->cmbEquipmentID->currentData().toString().toLatin1());
     multiPart->append(loginPart);
+    /* debug */
+    loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"debug\""));
+    if (ui->chkDebug->isChecked()) { loginPart.setBody("1"); }
+    else { loginPart.setBody("0"); }
+    multiPart->append(loginPart);
     /* transaction number */
     loginPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"transactionid\""));
     loginPart.setBody(QString::number(transactionNumber).toLatin1());
@@ -1177,6 +1205,7 @@ int MainWindow::UploadFileList(QStringList list, QStringList md5list)
         filePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"files[]\"; filename=\""+ file->fileName() + "\""));
         file->open(QIODevice::ReadOnly);
         filePart.setBodyDevice(file);
+        //filePart.setBody(file->readAll());
         file->setParent(multiPart); // we cannot delete the file now, so delete it with the multiPart
         multiPart->append(filePart);
         /* create the MD5 list [file|md5,file2|md5,etc] */
