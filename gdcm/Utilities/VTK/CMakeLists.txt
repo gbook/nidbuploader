@@ -16,7 +16,9 @@ if(GDCM_HAVE_PTHREAD_H AND CMAKE_USE_PTHREADS)
   )
 endif()
 
-include(${VTK_USE_FILE})
+#if( ${VTK_VERSION_MAJOR} LESS 7 )
+  include(${VTK_USE_FILE})
+#endif()
 
 if( ${VTK_MAJOR_VERSION} GREATER 5 )
   list(APPEND vtkgdcm_SRCS
@@ -51,6 +53,7 @@ include_directories(
 if("${VTK_MAJOR_VERSION}" LESS 6)
   set(vtkgdcm_LIBS
     vtkCommon
+    vtkFiltering
     vtkIO
     vtkImaging
   )
@@ -66,7 +69,8 @@ else()
     vtkImagingCore
     vtkImagingSources
     vtkIOImage
-    vtksys
+    vtkIOLegacy
+    #vtksys
   )
   set(vtkgdcm_COND_LIBS
     vtkIOMPIImage
@@ -74,8 +78,13 @@ else()
     vtkRenderingCore
     vtkRenderingFreeType
     vtkRenderingFreeTypeOpenGL
-    vtkRenderingOpenGL
+    vtkFiltersParallelDIY2
   )
+  if(("${VTK_MAJOR_VERSION}" EQUAL 6) OR ("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL"))
+    list(APPEND vtkgdcm_COND_LIBS vtkRenderingOpenGL)
+  else()
+    list(APPEND vtkgdcm_COND_LIBS vtkRenderingOpenGL2)
+  endif()
   foreach(TMP_LIB ${VTK_LIBRARIES})
     foreach(TRY_LIB ${vtkgdcm_COND_LIBS})
       if("${TMP_LIB}" STREQUAL "${TRY_LIB}")
@@ -157,12 +166,12 @@ endif()
 #endif()
 
 set_target_properties(${VTKGDCM_NAME} PROPERTIES ${GDCM_LIBRARY_PROPERTIES})
-target_link_libraries(${VTKGDCM_NAME} gdcmMSFF ${vtkgdcm_LIBS})
+target_link_libraries(${VTKGDCM_NAME} LINK_PRIVATE gdcmMSFF ${vtkgdcm_LIBS})
 if(GDCM_HAVE_PTHREAD_H)
-  target_link_libraries(${VTKGDCM_NAME} pthread)
+  target_link_libraries(${VTKGDCM_NAME} LINK_PRIVATE pthread)
 endif()
 # prevent viral dep of vtkgdcm
-set_property(TARGET ${VTKGDCM_NAME} PROPERTY LINK_INTERFACE_LIBRARIES "")
+#set_property(TARGET ${VTKGDCM_NAME} PROPERTY LINK_INTERFACE_LIBRARIES "")
 if(NOT GDCM_INSTALL_NO_LIBRARIES)
   install(TARGETS ${VTKGDCM_NAME}
     EXPORT ${GDCM_TARGETS_NAME}
@@ -214,12 +223,12 @@ if(GDCM_WRAP_PHP)
 
   SWIG_ADD_MODULE(php_vtkgdcm php vtkgdcm.i)
   SWIG_LINK_LIBRARIES(php_vtkgdcm vtkgdcm)
-  target_link_libraries(${SWIG_MODULE_php_vtkgdcm_REAL_NAME} ${vtkgdcm_LIBS})
+  target_link_libraries(${SWIG_MODULE_php_vtkgdcm_REAL_NAME} LINK_PRIVATE ${vtkgdcm_LIBS})
   if(UNIX)
     set_target_properties(${SWIG_MODULE_php_vtkgdcm_REAL_NAME} PROPERTIES OUTPUT_NAME "vtkgdcm")
   endif()
   set_target_properties(${SWIG_MODULE_php_vtkgdcm_REAL_NAME} PROPERTIES PREFIX "")
-  set_target_properties(${SWIG_MODULE_php_vtkgdcm_REAL_NAME} PROPERTIES LINK_INTERFACE_LIBRARIES "")
+  #set_target_properties(${SWIG_MODULE_php_vtkgdcm_REAL_NAME} PROPERTIES LINK_INTERFACE_LIBRARIES "")
   set_property(TARGET ${SWIG_MODULE_php_vtkgdcm_REAL_NAME} PROPERTY NO_SONAME 1)
 
 if(NOT GDCM_INSTALL_NO_LIBRARIES)
@@ -281,12 +290,12 @@ if(GDCM_WRAP_CSHARP)
     set(CMAKE_SWIG_FLAGS "-namespace vtkgdcm -dllimport vtkgdcmsharpglue")
     separate_arguments(CMAKE_SWIG_FLAGS)
     SWIG_ADD_MODULE(vtkgdcmsharpglue csharp vtkgdcm.i)
-    SWIG_LINK_LIBRARIES(vtkgdcmsharpglue vtkgdcm)
+    target_link_libraries(${SWIG_MODULE_vtkgdcmsharpglue_REAL_NAME} LINK_PRIVATE vtkgdcm)
     # Stupid cmake-swig module is doing that for us, when not needed
     if(UNIX)
       set_target_properties(${SWIG_MODULE_vtkgdcmsharpglue_REAL_NAME} PROPERTIES PREFIX "lib")
     endif()
-    target_link_libraries(${SWIG_MODULE_vtkgdcmsharpglue_REAL_NAME} ${vtkgdcm_LIBS})
+    target_link_libraries(${SWIG_MODULE_vtkgdcmsharpglue_REAL_NAME} LINK_PRIVATE ${vtkgdcm_LIBS})
     if(NOT GDCM_INSTALL_NO_LIBRARIES)
       install(TARGETS ${SWIG_MODULE_vtkgdcmsharpglue_REAL_NAME}
         EXPORT ${GDCM_TARGETS_NAME}
@@ -316,24 +325,16 @@ if(GDCM_WRAP_CSHARP)
       message(FATAL_ERROR "error: mummy not found. mummy_EXECUTABLE='${mummy_EXECUTABLE}'")
     endif()
 
-    if(NOT gccxml_EXECUTABLE)
-      find_program(gccxml_EXECUTABLE gccxml)
+    if(NOT castxml_EXECUTABLE)
+      find_program(castxml_EXECUTABLE castxml)
     endif()
-    mark_as_advanced(gccxml_EXECUTABLE)
-    if(NOT gccxml_EXECUTABLE)
-      message(FATAL_ERROR "error: gccxml not found. gccxml_EXECUTABLE='${gccxml_EXECUTABLE}'")
+    mark_as_advanced(castxml_EXECUTABLE)
+    if(NOT castxml_EXECUTABLE)
+      message(FATAL_ERROR "error: castxml not found. castxml_EXECUTABLE='${castxml_EXECUTABLE}'")
     endif()
-    set(gccxml_compiler "${CMAKE_CXX_COMPILER}")
-    if(MSVC80)
-      set(gccxml_compiler "msvc8")
-    endif()
-    if(MSVC90)
-      set(gccxml_compiler "msvc9")
-    endif()
-    #message(STATUS "gccxml_compiler='${gccxml_compiler}'...")
-    set(gccxml_include_args "")
+    set(castxml_include_args "")
     foreach(dir ${Mummy_INCLUDE_DIRS} ${VTK_INCLUDE_DIRS})
-      set(gccxml_include_args ${gccxml_include_args} "-I${dir}")
+      set(castxml_include_args ${castxml_include_args} "-I${dir}")
     endforeach()
     configure_file(
       "${CMAKE_CURRENT_SOURCE_DIR}/MummySettings.xml.in"
@@ -408,17 +409,28 @@ if(GDCM_WRAP_CSHARP)
 
         add_custom_command(
           OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/xml/${cxxclass}.xml
-          COMMAND ${gccxml_EXECUTABLE}
+          COMMAND ${castxml_EXECUTABLE}
           ARGS
-            -fxml=${CMAKE_CURRENT_BINARY_DIR}/xml/${cxxclass}.xml
-            -fxml-start=_cable_
-            ${gccxml_include_args} -DCABLE_CONFIGURATION
-            --gccxml-compiler ${gccxml_compiler}
+	    --castxml-gccxml
+            -o ${CMAKE_CURRENT_BINARY_DIR}/xml/${cxxclass}.xml
+            --castxml-start _cable_
+            ${castxml_include_args} -DCABLE_CONFIGURATION
             ${CMAKE_CURRENT_BINARY_DIR}/xml/${cxxclass}_gccxml.cxx
+          # Remove the "Converter" and "Destructor" XML tags that are
+          # generated by "castxml" with a format that is different
+          # from that of "gccxml", and thus that are not properly
+          # understood by "mummy". Removing these tags does not seem
+          # to modify the output of "mummy".
+          COMMAND sed
+          ARGS
+            -i
+            "/^  <\\(Converter\\|Destructor\\) /d"
+            ${CMAKE_CURRENT_BINARY_DIR}/xml/${cxxclass}.xml
           DEPENDS
             ${CMAKE_CURRENT_BINARY_DIR}/xml/${cxxclass}_gccxml.cxx
             ${header}
             ${gccxml_EXECUTABLE}
+	  VERBATIM
         )
 
 #
@@ -627,21 +639,25 @@ endif()
 
 if(GDCM_WRAP_JAVA)
   if(VTK_WRAP_JAVA)
-    find_package(Java 1.5 REQUIRED) # javac, jar
+    find_package(Java ${GDCM_DEFAULT_JAVA_VERSION} REQUIRED) # javac, jar
     find_package(JNI REQUIRED)
     include_directories(${JNI_INCLUDE_DIRS})
     set(VTK_WRAP_JAVA3_INIT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-    # Lars Matthäus patch (package vtk => imply vtk subdir )
+    # Lars Matthaus patch (package vtk => imply vtk subdir )
     set(VTK_JAVA_HOME ${CMAKE_CURRENT_BINARY_DIR}/java/vtk)
     # This is *required* don't ask
     file(MAKE_DIRECTORY ${VTK_JAVA_HOME})
     include(${VTK_CMAKE_DIR}/vtkWrapJava.cmake)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-    VTK_WRAP_JAVA3(${VTKGDCM_NAME}Java vtkgdcmJAVA_SRCS "${vtkgdcm_SRCS}")
     # libvtk-java is a pain to handle...
     if(EXISTS ${VTK_JAVA_JAR})
       # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=533193
+      set(GDCM_VTK_JAVA_JAR ${VTK_JAVA_JAR})
+    else()
+      #Â http://bugs.debian.org/834493
+      find_file(VTK_JAVA_JAR NAMES vtk.jar vtk6.jar vtk5.jar
+        PATHS ${vtkWrappingJava_RUNTIME_LIBRARY_DIRS} /usr/share/java)
       set(GDCM_VTK_JAVA_JAR ${VTK_JAVA_JAR})
     endif()
     if(EXISTS /usr/lib/jni/libvtkCommonJava.so)
@@ -651,19 +667,21 @@ if(GDCM_WRAP_JAVA)
     endif()
     mark_as_advanced(GDCM_VTK_JAVA_JAR)
     if(EXISTS ${GDCM_VTK_JAVA_JAR})
-    else()
-      message(FATAL_ERROR "Could not find vtk.jar file, VTK_JAVA_JAR is wrong: ${VTK_JAVA_JAR}, please set proper GDCM_VTK_JAVA_JAR: ${GDCM_VTK_JAVA_JAR} replacement var")
-    endif()
+    VTK_WRAP_JAVA3(${VTKGDCM_NAME}Java vtkgdcmJAVA_SRCS "${vtkgdcm_SRCS}")
     add_library(${VTKGDCM_NAME}Java SHARED ${vtkgdcmJAVA_SRCS})
     # special jnilib extension:
     if(APPLE)
       set_target_properties(${VTKGDCM_NAME}Java PROPERTIES SUFFIX ".jnilib")
     endif()
-    target_link_libraries(${VTKGDCM_NAME}Java ${VTKGDCM_NAME})
+    target_link_libraries(${VTKGDCM_NAME}Java LINK_PRIVATE ${VTKGDCM_NAME})
     set_property(TARGET ${VTKGDCM_NAME}Java PROPERTY NO_SONAME 1)
-    foreach(c ${vtkgdcm_LIBS})
-      target_link_libraries(${VTKGDCM_NAME}Java ${c}Java)
-    endforeach()
+    # By default link those module since APPLE and WIN32 needs fully resolved
+    # shared lib allow advanced users to skip the link step:
+    if(NOT GDCM_NO_VTKJAVA_LIBS_LINKING)
+      foreach(c ${vtkgdcm_LIBS})
+        target_link_libraries(${VTKGDCM_NAME}Java LINK_PRIVATE ${c}Java)
+      endforeach()
+    endif()
     # Create the jar file:
     # I am pretty sure this *.java thingy will bite me one day, when someone will try
     # to recompile from an existing build tree with invalid generated *.java file...
@@ -673,7 +691,7 @@ if(GDCM_WRAP_JAVA)
       #COMMAND ${Java_JAVAC_EXECUTABLE} ARGS -cp ${GDCM_VTK_JAVA_JAR} "vtk/*.java"
       # No such thing as -cp for javac only java is listed:
       # http://java.sun.com/j2se/1.5.0/docs/tooldocs/windows/classpath.html
-      COMMAND ${Java_JAVAC_EXECUTABLE} ARGS ${jflags} -source 1.5 -target 1.5 -classpath ${GDCM_VTK_JAVA_JAR} "vtk/*.java"
+      COMMAND ${Java_JAVAC_EXECUTABLE} ARGS ${jflags} -source ${GDCM_JAVA_SOURCE_VERSION} -target ${GDCM_JAVA_TARGET_VERSION} -classpath ${GDCM_VTK_JAVA_JAR} "vtk/*.java"
       COMMAND ${Java_JAR_EXECUTABLE} ARGS -cvfm ${LIBRARY_OUTPUT_PATH}/${PROJECT_NAME}.jar ${CMAKE_CURRENT_SOURCE_DIR}/manifest.txt vtk/*.class
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/java
       DEPENDS ${VTKGDCM_NAME}Java
@@ -709,6 +727,10 @@ if(GDCM_WRAP_JAVA)
       )
     endif()
 
+
+    else()
+      message(WARNING "Could not find vtk.jar file, VTK_JAVA_JAR is wrong: ${VTK_JAVA_JAR}, please set proper GDCM_VTK_JAVA_JAR: ${GDCM_VTK_JAVA_JAR} replacement var")
+    endif()
   else()
     message(STATUS "GDCM_WRAP_JAVA canot be build without VTK_WRAP_JAVA")
   endif()
@@ -735,20 +757,26 @@ if(GDCM_WRAP_PYTHON)
     add_library(${VTKGDCM_NAME}Python MODULE ${VTKGDCM_NAME}PythonInit.cxx)
     # do not set the version on the Python module:
     #set_target_properties(${VTKGDCM_NAME}Python PROPERTIES ${GDCM_LIBRARY_PROPERTIES})
-    target_link_libraries(${VTKGDCM_NAME}PythonD ${VTKGDCM_NAME} ${PYTHON_LIBRARY})
-    foreach(c ${vtkgdcm_LIBS} vtkFiltering)
-      target_link_libraries(${VTKGDCM_NAME}PythonD ${c}Python${DEXTENSION})
+    target_link_libraries(${VTKGDCM_NAME}PythonD LINK_PRIVATE ${VTKGDCM_NAME} ${PYTHON_LIBRARY})
+    foreach(c ${vtkgdcm_LIBS})
+      target_link_libraries(${VTKGDCM_NAME}PythonD LINK_PRIVATE ${c}Python${DEXTENSION})
     endforeach()
     if(TARGET vtkPythonCore)
-      target_link_libraries(${VTKGDCM_NAME}PythonD vtkPythonCore)
+      target_link_libraries(${VTKGDCM_NAME}PythonD LINK_PRIVATE vtkPythonCore)
     endif()
-    target_link_libraries(${VTKGDCM_NAME}Python ${VTKGDCM_NAME}PythonD)
+    target_link_libraries(${VTKGDCM_NAME}Python LINK_PRIVATE ${VTKGDCM_NAME}PythonD)
     if(NOT GDCM_NO_PYTHON_LIBS_LINKING)
-      target_link_libraries(${VTKGDCM_NAME}Python ${PYTHON_LIBRARY})
+      target_link_libraries(${VTKGDCM_NAME}Python LINK_PRIVATE ${PYTHON_LIBRARY})
     endif()
-    set_property(TARGET ${VTKGDCM_NAME}PythonD PROPERTY LINK_INTERFACE_LIBRARIES "")
+    #set_property(TARGET ${VTKGDCM_NAME}PythonD PROPERTY LINK_INTERFACE_LIBRARIES "")
     set_property(TARGET ${VTKGDCM_NAME}Python PROPERTY NO_SONAME 1)
     #set_property(TARGET ${VTKGDCM_NAME}PythonD PROPERTY NO_SONAME 1)
+    # Removing lib prefix if we are at VTK7. Based on a reply by David Gobbi to
+    # this Thread
+    # http://vtk.1045678.n5.nabble.com/python-wrapping-with-VTK-7-td5737442.html
+    if( "${VTK_MAJOR_VERSION}" GREATER 6 )
+      set_target_properties(${VTKGDCM_NAME}Python PROPERTIES PREFIX "")
+    endif()
     # Python extension modules on Windows must have the extension ".pyd"
     # instead of ".dll" as of Python 2.5.  Older python versions do support
     # this suffix.

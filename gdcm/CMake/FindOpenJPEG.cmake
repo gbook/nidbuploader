@@ -18,36 +18,18 @@
 # (To distribute this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-# Try first to locate a cmake config file
-find_package(OpenJPEG QUIET NO_MODULE)
-
-if( NOT OpenJPEG_DIR )
-set(OPENJPEG_MAJOR_VERSION 1) # FIXME ?
-find_path(OPENJPEG_INCLUDE_DIR
-  NAMES openjpeg.h #openjpeg-1.0/openjpeg.h
-  PATHS /usr/local/include
-  /usr/local/include/openjpeg-1.0
-  /usr/include
-  /usr/include/openjpeg-1.0
-  )
-
-find_library(OPENJPEG_LIBRARY
-  NAMES openjpeg
-  )
+# Try with pkg-config first
+find_package(PkgConfig)
+pkg_check_modules(OPENJPEG libopenjp2)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(OpenJPEG DEFAULT_MSG
-  OPENJPEG_LIBRARY
-  OPENJPEG_INCLUDE_DIR
+find_package_handle_standard_args(OpenJPEG REQUIRED_VARS
+  OPENJPEG_LIBRARIES
+  OPENJPEG_INCLUDE_DIRS
+  VERSION_VAR OPENJPEG_VERSION
 )
 
-if(OPENJPEG_FOUND)
-  set(OPENJPEG_LIBRARIES ${OPENJPEG_LIBRARY})
-  set(OPENJPEG_INCLUDE_DIRS ${OPENJPEG_INCLUDE_DIR})
-endif()
-
 mark_as_advanced(
-  OPENJPEG_LIBRARY
-  OPENJPEG_INCLUDE_DIR
+  OPENJPEG_LIBRARIES
+  OPENJPEG_INCLUDE_DIRS
   )
-endif()

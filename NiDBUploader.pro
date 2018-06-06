@@ -50,7 +50,7 @@ LIBS += -lgdcmMSFF \
     -lgdcmjpeg12 \
     -lgdcmjpeg16 \
     -lgdcmjpeg8 \
-    -lgdcmopenjpeg \
+    -lgdcmopenjp2 \
     -lgdcmzlib \
     -lsocketxx
 

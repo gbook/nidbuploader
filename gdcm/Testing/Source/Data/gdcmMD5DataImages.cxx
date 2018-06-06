@@ -684,6 +684,22 @@ static const char * const gdcmMD5DataImages[][2] = {
 // Computed with kakadu:
 { "a218fcee00e16d430f30ec7ebd4937dc" , "lena512_rot90.j2k.dcm" },
 
+{ "dbf83984984741c98205d77a947b442c" , "SC16BitsAllocated_8BitsStoredJ2K.dcm" },
+{ "c164a73ba18ab4e88977921ffc7c3a65" , "SC16BitsAllocated_8BitsStoredJPEG.dcm" },
+
+{ "4a5d8549791432b29948dd8ff63e2534" , "SIEMENS_SYNGO-12-MONO2-LUTWrongLength512.dcm" },
+
+{ "2c8630ae1bff925b258d98e742dfc632" , "JPEGLS_CharLS_10742.dcm" },
+{ "f666a95dde9ddfdec0cf9574a7985ae3" , "IllegalGroup2ImplicitTS.dcm" },
+
+{ "b85686dd3169b99725149abb00181254" , "RLEDebianBug816607Orig.dcm" },
+{ "464960d948dff0ded72b0380080f18a3" , "JPEGNote_empty.dcm" },
+{ "cdfb5dd0c999d88badeb00a16f96554f" , "JPEGLosslessYBR_FULL_422.dcm" },
+{ "464960d948dff0ded72b0380080f18a3" , "JPEGNote_missing.dcm" },
+{ "161e9fd986ea87adf2596e8e16641f11" , "JPEGNote_bogus.dcm" },
+
+{ "ad8f1164f0517ee150bf510d5dba5cc6" , "GE_MR_0025xx1bProtocolDataBlockXML.dcm" },
+
 
 /* Stopping condition */
 { 0 ,0 }

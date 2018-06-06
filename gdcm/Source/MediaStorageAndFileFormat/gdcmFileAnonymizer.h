@@ -26,11 +26,11 @@ class FileAnonymizerInternals;
 /**
  * \brief FileAnonymizer
  *
- * This Anonymizer is a file-based Anonymizer. It requires a valid DICOM
+ * \details This Anonymizer is a file-based Anonymizer. It requires a valid DICOM
  * file and will use the Value Length to skip over any information.
  *
  * It will not load the DICOM dataset taken from SetInputFileName() into memory
- * and should consume much less memory than gdcm::Anonymizer.
+ * and should consume much less memory than Anonymizer.
  *
  * \warning: Each time you call Replace() with a value. This value will copied,
  * and stored in memory.  The behavior is not ideal for extremely large data
@@ -41,6 +41,8 @@ class FileAnonymizerInternals;
  * \li This class will NOT work with unordered attributes in a DICOM File,
  * \li This class does neither recompute nor update the Group Length element,
  * \li This class currently does not update the File Meta Information header.
+ * \li Only strict inplace Replace operation is supported when input and output
+ *     file are the same.
  */
 class GDCM_EXPORT FileAnonymizer : public Subject
 {
@@ -78,7 +80,6 @@ private:
   bool ComputeRemoveTagPosition();
   bool ComputeReplaceTagPosition();
   FileAnonymizerInternals *Internals;
-
 };
 
 } // end namespace gdcm

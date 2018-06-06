@@ -23,14 +23,14 @@
 #include <set>
 #include <iterator>
 
-namespace gdcm
+namespace gdcm_ns
 {
 class GDCM_EXPORT DataElementException : public std::exception {};
 
 class PrivateTag;
 /**
  * \brief Class to represent a Data Set (which contains Data Elements)
- * A Data Set represents an instance of a real world Information Object
+ * \details A Data Set represents an instance of a real world Information Object
  * \note
  * DATA SET:
  * Exchanged information consisting of a structured set of Attribute values
@@ -148,15 +148,25 @@ public:
   }
   /// Replace a dataelement with another one
   void Replace(const DataElement& de) {
-    if( DES.find(de) != DES.end() ) DES.erase(de);
-    Insert(de);
+    ConstIterator it = DES.find(de);
+	if( it != DES.end() )
+	{
+	  // detect loop:
+	  gdcmAssertAlwaysMacro( &*it != &de );
+	  DES.erase(it);
+	}
+    DES.insert(de);
   }
   /// Only replace a DICOM attribute when it is missing or empty
   void ReplaceEmpty(const DataElement& de) {
     ConstIterator it = DES.find(de);
     if( it != DES.end() && it->IsEmpty() )
-      DES.erase(de);
-    Insert(de);
+    {
+      // detect loop:
+	  gdcmAssertAlwaysMacro( &*it != &de );
+	  DES.erase(it);
+    }
+	DES.insert(de);
   }
   /// Completely remove a dataelement from the dataset
   SizeType Remove(const Tag& tag) {
@@ -309,7 +319,7 @@ inline std::ostream& operator<<(std::ostream &os, const DataSet &val)
   return os;
 }
 
-#if defined(SWIGPYTHON) || defined(SWIGCSHARP) || defined(SWIGJAVA)
+#if defined(SWIGPYTHON) || defined(SWIGCSHARP) || defined(SWIGJAVA) || defined(SWIGPHP)
 /*
  * HACK: I need this temp class to be able to manipulate a std::set from python,
  * swig does not support wrapping of simple class like std::set...
@@ -333,7 +343,7 @@ private:
  * This is a C# example on how to use gdcm::SWIGDataSet
  */
 
-} // end namespace gdcm
+} // end namespace gdcm_ns
 
 #include "gdcmDataSet.txx"
 

@@ -34,8 +34,9 @@ namespace gdcm
 #include "gdcmStreamOffsetDataFiles.cxx"
 // After gdcmStreamOffsetDataFiles:
 #include "gdcmSelectedTagsOffsetDataFiles.cxx"
+#include "gdcmSelectedPrivateGroupOffsetDataFiles.cxx"
 
-bool Testing::ComputeMD5(const char *buffer, unsigned long buf_len,
+bool Testing::ComputeMD5(const char *buffer, size_t buf_len,
   char digest_str[33])
 {
   return MD5::Compute(buffer, buf_len, digest_str);
@@ -183,6 +184,26 @@ std::streamoff Testing::GetStreamOffsetFromFile(const char *filepath)
   return so[i].offset;
 }
 
+std::streamoff Testing::GetSelectedPrivateGroupOffsetFromFile(const char *filepath)
+{
+  if(!filepath) return 0;
+  unsigned int i = 0;
+  const StreamOffset* so = gdcmSelectedPrivateGroupOffsetDataFiles;
+  const char *p = so[i].filename;
+  Filename comp(filepath);
+  const char *filename = comp.GetName();
+  while( p != 0 )
+    {
+    if( strcmp( filename, p ) == 0 )
+      {
+      break;
+      }
+    ++i;
+    p = so[i].filename;
+    }
+  return so[i].offset;
+}
+
 std::streamoff Testing::GetSelectedTagsOffsetFromFile(const char *filepath)
 {
   if(!filepath) return 0;
@@ -200,7 +221,8 @@ std::streamoff Testing::GetSelectedTagsOffsetFromFile(const char *filepath)
     ++i;
     p = so[i].filename;
     }
-  return so[i].offset;}
+  return so[i].offset;
+}
 
 // See TestImageReader + lossydump = true to generate this list:
 struct LossyFile
@@ -301,7 +323,7 @@ static const LossyFile gdcmLossyFilenames[] = {
 { 0,"D_CLUNIE_VL4_RLE.dcm" },
 { 0,"D_CLUNIE_RG1_RLE.dcm" },
 { 1,"JDDICOM_Sample2.dcm" },
-{0,"AMIInvalidPrivateDefinedLengthSQasUN.dcm" },
+{ 0,"AMIInvalidPrivateDefinedLengthSQasUN.dcm" },
 { 0,"SIEMENS_MAGNETOM-12-MONO2-FileSeq3.dcm" },
 { 0,"CT-MONO2-8-abdo.dcm" },
 { 0,"D_CLUNIE_SC1_RLE.dcm" },
@@ -394,21 +416,32 @@ static const LossyFile gdcmLossyFilenames[] = {
 { 1,"multiframegrayscalewordscis.dcm" },
 { 1,"multiframesinglebitscis.dcm" },
 { 1,"multiframetruecolorscis.dcm" },
-{ 1, "SinglePrecisionSC.dcm" },
-{ 0, "signedtruecoloroldsc.dcm" },
-{ 0, "o.dcm" },
-{ 0, "UnexpectedSequenceDelimiterInFixedLengthSequence.dcm" },
-{ 0, "IM-0001-0066.CommandTag00.dcm" },
-{ 0, "NM_Kakadu44_SOTmarkerincons.dcm" },
-{ 0, "GDCMJ2K_TextGBR.dcm" },
-{ 0, "PhilipsInteraSeqTermInvLen.dcm" },
-{ 0, "LIBIDO-24-ACR_NEMA-Rectangle.dcm" },
-{ 0, "TOSHIBA_J2K_SIZ1_PixRep0.dcm" },
-{ 0, "TOSHIBA_J2K_SIZ0_PixRep1.dcm" },
-{ 0, "TOSHIBA_J2K_OpenJPEGv2Regression.dcm" },
-{ 0, "NM-PAL-16-PixRep1.dcm" },
-{ 0, "MEDILABInvalidCP246_EVRLESQasUN.dcm" },
-{ 0, "JPEGInvalidSecondFrag.dcm" },
+{ 1,"SinglePrecisionSC.dcm" },
+{ 0,"signedtruecoloroldsc.dcm" },
+{ 0,"o.dcm" },
+{ 0,"UnexpectedSequenceDelimiterInFixedLengthSequence.dcm" },
+{ 0,"IM-0001-0066.CommandTag00.dcm" },
+{ 0,"NM_Kakadu44_SOTmarkerincons.dcm" },
+{ 0,"GDCMJ2K_TextGBR.dcm" },
+{ 0,"PhilipsInteraSeqTermInvLen.dcm" },
+{ 0,"LIBIDO-24-ACR_NEMA-Rectangle.dcm" },
+{ 0,"TOSHIBA_J2K_SIZ1_PixRep0.dcm" },
+{ 0,"TOSHIBA_J2K_SIZ0_PixRep1.dcm" },
+{ 0,"TOSHIBA_J2K_OpenJPEGv2Regression.dcm" },
+{ 0,"NM-PAL-16-PixRep1.dcm" },
+{ 0,"MEDILABInvalidCP246_EVRLESQasUN.dcm" },
+{ 0,"JPEGInvalidSecondFrag.dcm" },
+{ 0,"SC16BitsAllocated_8BitsStoredJ2K.dcm" },
+{ 0,"SC16BitsAllocated_8BitsStoredJPEG.dcm" },
+{ 0,"SIEMENS_SYNGO-12-MONO2-LUTWrongLength512.dcm" },
+{ 0,"JPEGLS_CharLS_10742.dcm" },
+{ 1,"JPEGLosslessYBR_FULL_422.dcm" },
+{ 1,"JPEGNote_empty.dcm" },
+{ 1,"JPEGNote_missing.dcm" },
+{ 1,"JPEGNote_bogus.dcm" },
+{ 0,"RLEDebianBug816607Orig.dcm" },
+{ 0,"IllegalGroup2ImplicitTS.dcm" },
+{ 0,"GE_MR_0025xx1bProtocolDataBlockXML.dcm" },
 { 0, NULL }
 };
 

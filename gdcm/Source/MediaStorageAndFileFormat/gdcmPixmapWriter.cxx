@@ -12,6 +12,7 @@
 
 =========================================================================*/
 #include "gdcmPixmapWriter.h"
+#include "gdcmImageHelper.h"
 #include "gdcmTrace.h"
 #include "gdcmDataSet.h"
 #include "gdcmDataElement.h"
@@ -174,10 +175,6 @@ Attribute<0x0028,0x0004> piat;
       ds.Replace( bluedesc.GetAsDataElement() );
       }
 
-    //ds.Remove( Tag(0x0028, 0x1221) );
-    //ds.Remove( Tag(0x0028, 0x1222) );
-    //ds.Remove( Tag(0x0028, 0x1223) );
-
 
  {
   // Pixel Data
@@ -233,7 +230,7 @@ Attribute<0x0028,0x0004> piat;
     }
 }
 
-bool PixmapWriter::PrepareWrite()
+bool PixmapWriter::PrepareWrite( MediaStorage const & ref_ms )
 {
   File& file = GetFile();
   DataSet& ds = file.GetDataSet();
@@ -242,6 +239,7 @@ bool PixmapWriter::PrepareWrite()
   const TransferSyntax &ts_orig = fmi_orig.GetDataSetTransferSyntax();
 
   // col & rows:
+#if 0
   Attribute<0x0028, 0x0011> columns;
   columns.SetValue( (uint16_t)PixelData->GetDimension(0) );
   ds.Replace( columns.GetAsDataElement() );
@@ -265,6 +263,7 @@ bool PixmapWriter::PrepareWrite()
     assert( PixelData->GetDimension(2) == 1 );
     ds.Remove( tnumberofframes );
     }
+#endif
 
   PixelFormat pf = PixelData->GetPixelFormat();
   if ( !pf.IsValid() )
@@ -281,7 +280,7 @@ bool PixmapWriter::PrepareWrite()
     }
 
     {
-    assert( pi != PhotometricInterpretation::UNKNOW );
+    assert( pi != PhotometricInterpretation::UNKNOWN );
     const char *pistr = PhotometricInterpretation::GetPIString(pi);
     DataElement de( Tag(0x0028, 0x0004 ) );
     VL::Type strlenPistr = (VL::Type)strlen(pistr);
@@ -321,10 +320,113 @@ bool PixmapWriter::PrepareWrite()
     planarconf.SetValue( (uint16_t)PixelData->GetPlanarConfiguration() );
     ds.Replace( planarconf.GetAsDataElement() );
     }
+  // PhotometricInterpretation
+  // const Tag tphotometricinterpretation(0x0028, 0x0004);
+  //if( !ds.FindDataElement( Tag(0x0028, 0x0004) ) )
+    {
+    //if( pi == PhotometricInterpretation::RGB
+    //  || pi == PhotometricInterpretation::YBR_FULL ) // FIXME
+    //  {
+    //  Attribute<0x0028, 0x0006> planarconfiguration;
+    //  planarconfiguration.SetValue( PixelData->GetPlanarConfiguration() );
+    //  ds.Replace( planarconfiguration.GetAsDataElement() );
+    //  }
+    //else
+    if ( pi == PhotometricInterpretation::PALETTE_COLOR )
+      {
+      const LookupTable &lut = PixelData->GetLUT();
+      assert( lut.Initialized() );
+//      assert( (pf.GetBitsAllocated() == 8  && pf.GetPixelRepresentation() == 0)
+//           || (pf.GetBitsAllocated() == 16 && pf.GetPixelRepresentation() == 0) );
+      // lut descriptor:
+      // (0028,1101) US 256\0\16                                 #   6, 3 RedPaletteColorLookupTableDescriptor
+      // (0028,1102) US 256\0\16                                 #   6, 3 GreenPaletteColorLookupTableDescriptor
+      // (0028,1103) US 256\0\16                                 #   6, 3 BluePaletteColorLookupTableDescriptor
+      // lut data:
+      unsigned short length, subscript, bitsize;
+      unsigned short rawlut8[256];
+      unsigned short rawlut16[65536];
+      unsigned short *rawlut = rawlut8;
+      unsigned int lutlen = 256;
+      if( pf.GetBitsAllocated() == 16 )
+        {
+        rawlut = rawlut16;
+        lutlen = 65536;
+        }
+      unsigned int l;
+
+      // FIXME: should I really clear rawlut each time ?
+      // RED
+      memset(rawlut,0,lutlen*2);
+      lut.GetLUT(LookupTable::RED, (unsigned char*)rawlut, l);
+      DataElement redde( Tag(0x0028, 0x1201) );
+      redde.SetVR( VR::OW );
+      redde.SetByteValue( (char*)rawlut, l);
+      ds.Replace( redde );
+      // descriptor:
+      Attribute<0x0028, 0x1101, VR::US, VM::VM3> reddesc;
+      lut.GetLUTDescriptor(LookupTable::RED, length, subscript, bitsize);
+      reddesc.SetValue(length,0); reddesc.SetValue(subscript,1); reddesc.SetValue(bitsize,2);
+      ds.Replace( reddesc.GetAsDataElement() );
+
+      // GREEN
+      memset(rawlut,0,lutlen*2);
+      lut.GetLUT(LookupTable::GREEN, (unsigned char*)rawlut, l);
+      DataElement greende( Tag(0x0028, 0x1202) );
+      greende.SetVR( VR::OW );
+      greende.SetByteValue( (char*)rawlut, l);
+      ds.Replace( greende );
+      // descriptor:
+      Attribute<0x0028, 0x1102, VR::US, VM::VM3> greendesc;
+      lut.GetLUTDescriptor(LookupTable::GREEN, length, subscript, bitsize);
+      greendesc.SetValue(length,0); greendesc.SetValue(subscript,1); greendesc.SetValue(bitsize,2);
+      ds.Replace( greendesc.GetAsDataElement() );
+
+      // BLUE
+      memset(rawlut,0,lutlen*2);
+      lut.GetLUT(LookupTable::BLUE, (unsigned char*)rawlut, l);
+      DataElement bluede( Tag(0x0028, 0x1203) );
+      bluede.SetVR( VR::OW );
+      bluede.SetByteValue( (char*)rawlut, l);
+      ds.Replace( bluede );
+      // descriptor:
+      Attribute<0x0028, 0x1103, VR::US, VM::VM3> bluedesc;
+      lut.GetLUTDescriptor(LookupTable::BLUE, length, subscript, bitsize);
+      bluedesc.SetValue(length,0); bluedesc.SetValue(subscript,1); bluedesc.SetValue(bitsize,2);
+      ds.Replace( bluedesc.GetAsDataElement() );
+      }
+
+    ds.Remove( Tag(0x0028, 0x1221) );
+    ds.Remove( Tag(0x0028, 0x1222) );
+    ds.Remove( Tag(0x0028, 0x1223) );
+
+    }
+
+
+  // Cleanup LUT here since cant be done within gdcm::ImageApplyLookupTable
+  if( pi == PhotometricInterpretation::RGB )
+    {
+    // usual tags:
+    ds.Remove( Tag(0x0028, 0x1101) );
+    ds.Remove( Tag(0x0028, 0x1102) );
+    ds.Remove( Tag(0x0028, 0x1103) );
+
+    ds.Remove( Tag(0x0028, 0x1201) );
+    ds.Remove( Tag(0x0028, 0x1202) );
+    ds.Remove( Tag(0x0028, 0x1203) );
+
+    // Don't forget the segmented one:
+    ds.Remove( Tag(0x0028, 0x1221) );
+    ds.Remove( Tag(0x0028, 0x1222) );
+    ds.Remove( Tag(0x0028, 0x1223) );
+
+    // PaletteColorLookupTableUID ??
+    ds.Remove( Tag(0x0028, 0x1199) );
+    }
 
   // Overlay Data 60xx
-  gdcm::SequenceOfItems::SizeType nOv = PixelData->GetNumberOfOverlays();
-  for(gdcm::SequenceOfItems::SizeType ovidx = 0; ovidx < nOv; ++ovidx )
+  SequenceOfItems::SizeType nOv = PixelData->GetNumberOfOverlays();
+  for(SequenceOfItems::SizeType ovidx = 0; ovidx < nOv; ++ovidx )
     {
     // (6000,0010) US 484                                      #   2, 1 OverlayRows
     // (6000,0011) US 484                                      #   2, 1 OverlayColumns
@@ -391,9 +493,15 @@ bool PixmapWriter::PrepareWrite()
 
   // Pixel Data
   DataElement depixdata( Tag(0x7fe0,0x0010) );
-  const Value &v = PixelData->GetDataElement().GetValue();
-  depixdata.SetValue( v );
-  const ByteValue *bvpixdata = depixdata.GetByteValue();
+  DataElement & pde = PixelData->GetDataElement();
+  const ByteValue *bvpixdata = NULL;
+  // Sometime advanced user may use a gdcm::ImageRegionReader to feed an empty gdcm::Image
+  if( !pde.IsEmpty() )
+    {
+    const Value &v = PixelData->GetDataElement().GetValue();
+    depixdata.SetValue( v );
+    bvpixdata = depixdata.GetByteValue();
+    }
   const TransferSyntax &ts = PixelData->GetTransferSyntax();
   assert( ts.IsExplicit() || ts.IsImplicit() );
 
@@ -468,10 +576,15 @@ bool PixmapWriter::PrepareWrite()
       }
     else
       {
-      assert( ds.FindDataElement( at1.GetTag() ) );
-      assert( ds.FindDataElement( at3.GetTag() ) );
-      at1.Set( ds );
-      assert( atoi(at1.GetValue().c_str()) == 1 );
+      if( ds.FindDataElement( at1.GetTag() ) ) {
+            //assert( ds.FindDataElement( at3.GetTag() ) );
+            at1.Set( ds );
+            if( atoi(at1.GetValue().c_str()) != 1 ) {
+               gdcmWarningMacro( "Invalid value for LossyImageCompression" );
+            }
+      } else {
+               gdcmWarningMacro( "Missing attribute for LossyImageCompression" );
+      }
       }
     }
 
@@ -509,26 +622,38 @@ bool PixmapWriter::PrepareWrite()
     depixdata.SetVR( VR::OB );
     }
   depixdata.SetVL( vl );
-  ds.Replace( depixdata );
+  // Advanced user may have passed an empty image
+  if( !pde.IsEmpty() )
+    {
+    ds.Replace( depixdata );
+    }
 
   // Do Icon Image
   DoIconImage(ds, GetPixmap());
 
-  MediaStorage ms;
-  ms.SetFromFile( GetFile() );
-  assert( ms != MediaStorage::MS_END );
+  MediaStorage ms = ref_ms;
 
   // Most SOP Class support 2D, but let's make sure that 3D is ok:
   if( PixelData->GetNumberOfDimensions() > 2 )
-    {
+  {
     if( ms.GetModalityDimension() < PixelData->GetNumberOfDimensions() )
+    {
+      // input was specified with SC, but the Number of Frame is > 1. Fix that:
+      ms = ImageHelper::ComputeMediaStorageFromModality( ms.GetModality(),
+          PixelData->GetNumberOfDimensions(),
+          PixelData->GetPixelFormat(),
+          PixelData->GetPhotometricInterpretation(),
+          0, 1 );
+      if( ms.GetModalityDimension() < PixelData->GetNumberOfDimensions() )
       {
-      gdcmErrorMacro( "Problem with NumberOfDimensions and MediaStorage" );
-#if 0
-      return false;
-#endif
+        gdcmErrorMacro( "Problem with NumberOfDimensions and MediaStorage" );
+        return false;
       }
     }
+  }
+  // if we reach here somethnig went really wrong in previous step. Let's make
+  // it a hard failure
+  gdcmAssertAlwaysMacro( ms != MediaStorage::MS_END );
 
   const char* msstr = MediaStorage::GetMSString(ms);
   if( !ds.FindDataElement( Tag(0x0008, 0x0016) ) )
@@ -559,6 +684,7 @@ bool PixmapWriter::PrepareWrite()
       assert( bv->GetLength() == strlen( msstr ) || bv->GetLength() == strlen(msstr) + 1 );
       }
     }
+  ImageHelper::SetDimensionsValue(file, *PixelData);
 
   // UIDs:
   // (0008,0018) UI [1.3.6.1.4.1.5962.1.1.1.1.3.20040826185059.5457] #  46, 1 SOPInstanceUID
@@ -643,18 +769,33 @@ bool PixmapWriter::PrepareWrite()
     }
 
   FileMetaInformation &fmi = file.GetHeader();
-  fmi.Clear();
-  //assert( ts == TransferSyntax::ImplicitVRLittleEndian );
-    {
-    const char *tsuid = TransferSyntax::GetTSString( ts );
-    DataElement de( Tag(0x0002,0x0010) );
-    VL::Type strlenTSUID = (VL::Type)strlen(tsuid);
-    de.SetByteValue( tsuid, strlenTSUID );
-    de.SetVR( Attribute<0x0002, 0x0010>::GetVR() );
-    fmi.Replace( de );
-    fmi.SetDataSetTransferSyntax(ts);
-    }
-  fmi.FillFromDataSet( ds );
+  if( GetCheckFileMetaInformation() )
+  {
+    fmi.Clear();
+    //assert( ts == TransferSyntax::ImplicitVRLittleEndian );
+      {
+      const char *tsuid = TransferSyntax::GetTSString( ts );
+      DataElement de( Tag(0x0002,0x0010) );
+      VL::Type strlenTSUID = (VL::Type)strlen(tsuid);
+      de.SetByteValue( tsuid, strlenTSUID );
+      de.SetVR( Attribute<0x0002, 0x0010>::GetVR() );
+      fmi.Replace( de );
+      fmi.SetDataSetTransferSyntax(ts);
+      }
+    fmi.FillFromDataSet( ds );
+  }
+  else
+  {
+      Attribute<0x0002,0x0010> at;
+      at.SetFromDataSet( fmi );
+      const char *tsuid = TransferSyntax::GetTSString( ts );
+      UIComp tsui  = at.GetValue();
+      if( tsui != tsuid )
+      {
+        gdcmErrorMacro( "Incompatible TransferSyntax." );
+         return false;
+      }
+  }
 
 
   return true;
@@ -662,7 +803,17 @@ bool PixmapWriter::PrepareWrite()
 
 bool PixmapWriter::Write()
 {
-  if( !PrepareWrite() ) return false;
+  MediaStorage ms;
+  if( !ms.SetFromFile( GetFile() ) )
+  {
+    // Let's fix some old ACR-NAME stuff:
+    ms = ImageHelper::ComputeMediaStorageFromModality( ms.GetModality(),
+        PixelData->GetNumberOfDimensions(),
+        PixelData->GetPixelFormat(),
+        PixelData->GetPhotometricInterpretation(),
+        0, 1 );
+  }
+  if( !PrepareWrite( ms ) ) return false;
 
   assert( Stream );
   if( !Writer::Write() )

@@ -18,12 +18,12 @@
 #include "gdcmDataSet.h"
 #include "gdcmFileMetaInformation.h"
 
-namespace gdcm
+namespace gdcm_ns
 {
 
 /**
  * \brief a DICOM File
- * See PS 3.10 File: A File is an ordered string of zero or more bytes, where
+ * \details See PS 3.10 File: A File is an ordered string of zero or more bytes, where
  * the first byte is at the beginning of the file and the last byte at the end
  * of the File. Files are identified by a unique File ID and may by written,
  * read and/or deleted.
@@ -33,7 +33,8 @@ namespace gdcm
 class GDCM_EXPORT File : public Object
 {
 public:
-  File() {};
+  File();
+  ~File();
 
   friend std::ostream &operator<<(std::ostream &os, const File &val);
 
@@ -74,6 +75,6 @@ inline std::ostream& operator<<(std::ostream &os, const File &val)
   return os;
 }
 
-} // end namespace gdcm
+} // end namespace gdcm_ns
 
 #endif //GDCMFILE_H

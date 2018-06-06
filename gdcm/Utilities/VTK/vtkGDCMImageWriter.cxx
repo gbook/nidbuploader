@@ -47,7 +47,7 @@
 
 #include <limits>
 
-vtkCxxRevisionMacro(vtkGDCMImageWriter, "$Revision: 1.1 $")
+//vtkCxxRevisionMacro(vtkGDCMImageWriter, "$Revision: 1.1 $")
 vtkStandardNewMacro(vtkGDCMImageWriter)
 
 //vtkCxxSetObjectMacro(vtkGDCMImageWriter,LookupTable,vtkLookupTable)
@@ -66,7 +66,7 @@ inline bool vtkGDCMImageWriter_IsCharTypeSigned()
 }
 
 #ifndef vtkFloatingPointType
-#define vtkFloatingPointType float
+#define vtkFloatingPointType double
 #endif
 
 //----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ int vtkGDCMImageWriter::RequestInformation(
   vtkInformationVector *vtkNotUsed(outputVector))
 {
   // Check to make sure that all input information agrees
-  int mismatchedInputs = 0;
+  //int mismatchedInputs = 0;
 
   double spacing[3];
   double origin[3];
@@ -179,7 +179,7 @@ int vtkGDCMImageWriter::RequestInformation(
           != components ||
         inInfo->Get(vtkDataObject::FIELD_ARRAY_TYPE()) != dataType)
       {
-      mismatchedInputs = 1;
+      //mismatchedInputs = 1;
       return 0;
       }
     }
@@ -520,6 +520,7 @@ int vtkGDCMImageWriter::WriteGDCMData(vtkImageData *data, int timeStep)
   //this->FileDimensionality
   int scalarType = data->GetScalarType();
   gdcm::PixelFormat pixeltype = gdcm::PixelFormat::UNKNOWN;
+  bool forcerescale = false;
   switch( scalarType )
     {
   case VTK_BIT:
@@ -563,6 +564,7 @@ int vtkGDCMImageWriter::WriteGDCMData(vtkImageData *data, int timeStep)
     will be doing unsigned short anyway...
     */
     pixeltype = gdcm::PixelFormat::FLOAT32;
+    forcerescale = true;
     break;
   case VTK_DOUBLE:
     if( this->Shift == (int)this->Shift && this->Scale == (int)this->Scale )
@@ -576,6 +578,7 @@ int vtkGDCMImageWriter::WriteGDCMData(vtkImageData *data, int timeStep)
     will be doing unsigned short anyway...
     */
     pixeltype = gdcm::PixelFormat::FLOAT64;
+    forcerescale = true;
     break;
   default:
     vtkErrorMacro( "Do not support this Pixel Type: " << scalarType );
@@ -641,7 +644,10 @@ int vtkGDCMImageWriter::WriteGDCMData(vtkImageData *data, int timeStep)
 
   // store in a safe place the 'raw' pixeltype from vtk
   gdcm::PixelFormat savepixeltype = pixeltype;
-  if( this->Shift == 0 && this->Scale == 1 )
+  // fast path, when (shift,scale) is (0,1) we do not need no rescale function
+  // at all. Pay attention in some case users really wants to store floating
+  // point values anyway, be nice with them
+  if( !forcerescale && (this->Shift == 0 && this->Scale == 1) )
     {
     //assert( pixeltype == outputpt );
     }
@@ -767,7 +773,7 @@ int vtkGDCMImageWriter::WriteGDCMData(vtkImageData *data, int timeStep)
   bool rescaled = false;
   char * copy = NULL;
   // Whenever shift / scale is needed... do it !
-  if( this->Shift != 0 || this->Scale != 1 )
+  if( this->Shift != 0 || this->Scale != 1 || forcerescale )
     {
     assert( this->PlanarConfiguration == 0 );
     // rescale from float to unsigned short
@@ -879,14 +885,14 @@ int vtkGDCMImageWriter::WriteGDCMData(vtkImageData *data, int timeStep)
     SetStringValueFromTag( this->MedicalImageProperties->GetPatientSex(), gdcm::Tag(0x0010,0x0040), ano);
     // For ex: DICOM (0010,0030) = 19680427
     SetStringValueFromTag( this->MedicalImageProperties->GetPatientBirthDate(), gdcm::Tag(0x0010,0x0030), ano);
-#if ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0 )
+#if VTK_MAJOR_VERSION >= 6 || ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0 )
     // For ex: DICOM (0008,0020) = 20030617
     if( vtkMedicalImageProperties::GetDateAsFields( this->MedicalImageProperties->GetStudyDate(), year, month, day ) )
       SetStringValueFromTag( this->MedicalImageProperties->GetStudyDate(), gdcm::Tag(0x0008,0x0020), ano);
 #endif
     // For ex: DICOM (0008,0022) = 20030617
     SetStringValueFromTag( this->MedicalImageProperties->GetAcquisitionDate(), gdcm::Tag(0x0008,0x0022), ano);
-#if ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0 )
+#if VTK_MAJOR_VERSION >= 6 || ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0 )
     // For ex: DICOM (0008,0030) = 162552.0705 or 230012, or 0012
 #if 0
     int hour, minute, second;
@@ -985,7 +991,7 @@ int vtkGDCMImageWriter::WriteGDCMData(vtkImageData *data, int timeStep)
         ds.Insert( de );
         }
       }
-#if ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0 )
+#if VTK_MAJOR_VERSION >= 6 || ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0 )
     // User defined value
     // Remap any user defined value from the DICOM name to the DICOM tag
     unsigned int nvalues = this->MedicalImageProperties->GetNumberOfUserDefinedValues();
@@ -1006,98 +1012,15 @@ int vtkGDCMImageWriter::WriteGDCMData(vtkImageData *data, int timeStep)
 #endif
     }
 
-
-  if( this->FileDimensionality != 2 && (
-      ms == gdcm::MediaStorage::SecondaryCaptureImageStorage ||
-      ms == gdcm::MediaStorage::MultiframeSingleBitSecondaryCaptureImageStorage
-  ) )
+  ms = gdcm::ImageHelper::ComputeMediaStorageFromModality(
+    this->MedicalImageProperties->GetModality(), this->FileDimensionality,
+    pixeltype, pi, this->Shift, this->Scale );
+  if( ms == gdcm::MediaStorage::MS_END )
     {
-    // A.8.3.4 Multi-frame Grayscale Byte SC Image IOD Content Constraints
-/*
-- Samples per Pixel (0028,0002) shall be 1
-- Photometric Interpretation (0028,0004) shall be MONOCHROME2
-- Bits Allocated (0028,0100) shall be 8
-- Bits Stored (0028,0101) shall be 8
-- High Bit (0028,0102) shall be 7
-- Pixel Representation (0028,0103) shall be 0
-- Planar Configuration (0028,0006) shall not be present
-*/
-    if( this->FileDimensionality == 3 &&
-      pixeltype.GetSamplesPerPixel() == 1 &&
-      pi == gdcm::PhotometricInterpretation::MONOCHROME2 &&
-      pixeltype.GetBitsAllocated() == 8 &&
-      pixeltype.GetBitsStored() == 8 &&
-      pixeltype.GetHighBit() == 7 &&
-      pixeltype.GetPixelRepresentation() == 0
-      // image.GetPlanarConfiguration()
-    )
-      {
-      ms = gdcm::MediaStorage::MultiframeGrayscaleByteSecondaryCaptureImageStorage;
-      if( this->Shift != 0 || this->Scale != 1 )
-        {
-        // Table C.8-25b SC MULTI-FRAME IMAGE MODULE ATTRIBUTES
-        // Note: This specifies an identity Modality LUT transformation.
-        vtkErrorMacro( "Cannot have shift/scale" );
-        return 0;
-        }
-      }
-    else if( this->FileDimensionality == 3 &&
-      pixeltype.GetSamplesPerPixel() == 1 &&
-      pi == gdcm::PhotometricInterpretation::MONOCHROME2 &&
-      pixeltype.GetBitsAllocated() == 1 &&
-      pixeltype.GetBitsStored() == 1 &&
-      pixeltype.GetHighBit() == 0 &&
-      pixeltype.GetPixelRepresentation() == 0
-      // image.GetPlanarConfiguration()
-    )
-      {
-      ms = gdcm::MediaStorage::MultiframeSingleBitSecondaryCaptureImageStorage;
-      if( this->Shift != 0 || this->Scale != 1 )
-        {
-        vtkErrorMacro( "Cannot have shift/scale" );
-        return 0;
-        }
-      }
-    else if( this->FileDimensionality == 3 &&
-      pixeltype.GetSamplesPerPixel() == 1 &&
-      pi == gdcm::PhotometricInterpretation::MONOCHROME2 &&
-      pixeltype.GetBitsAllocated() == 16 &&
-      pixeltype.GetBitsStored() <= 16 && pixeltype.GetBitsStored() >= 9 &&
-      pixeltype.GetHighBit() == pixeltype.GetBitsStored() - 1 &&
-      pixeltype.GetPixelRepresentation() == 0
-      // image.GetPlanarConfiguration()
-    )
-      {
-      ms = gdcm::MediaStorage::MultiframeGrayscaleWordSecondaryCaptureImageStorage;
-      if( this->Shift != 0 || this->Scale != 1 )
-        {
-        vtkErrorMacro( "Cannot have shift/scale" );
-        return 0;
-        }
-      }
-    else if( this->FileDimensionality == 3 &&
-      pixeltype.GetSamplesPerPixel() == 3 &&
-      pi == gdcm::PhotometricInterpretation::RGB &&
-      pixeltype.GetBitsAllocated() == 8 &&
-      pixeltype.GetBitsStored() == 8 &&
-      pixeltype.GetHighBit() == 7 &&
-      pixeltype.GetPixelRepresentation() == 0
-      // image.GetPlanarConfiguration()
-    )
-      {
-      ms = gdcm::MediaStorage::MultiframeTrueColorSecondaryCaptureImageStorage;
-      if( this->Shift != 0 || this->Scale != 1 )
-        {
-        vtkErrorMacro( "Cannot have shift/scale" );
-        return 0;
-        }
-      }
-    else
-      {
-      vtkErrorMacro( "Cannot handle Multi Frame image in SecondaryCaptureImageStorage" );
-      return 0;
-      }
+    vtkErrorMacro( "Incompatible MediaStorage" );
+    return 0;
     }
+
 
   // FIXME: new Secondary object handle multi frames...
   assert( gdcm::MediaStorage::IsImage( ms ) );
@@ -1130,7 +1053,7 @@ int vtkGDCMImageWriter::WriteGDCMData(vtkImageData *data, int timeStep)
     {
     iop[i+3] = dircos->GetElement(i,1);
     }
-#if ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 2 )
+#if VTK_MAJOR_VERSION >= 6 || ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 2 )
    const double *iop_mip = this->MedicalImageProperties->GetDirectionCosine();
    if( iop[0] != iop_mip[0]
     || iop[1] != iop_mip[1]

@@ -36,7 +36,7 @@ else()
   set(CMAKE_CSHARP_INTERPRETER ${MONO_EXECUTABLE})
 endif()
 
-set(DESIRED_CSHARP_COMPILER_VERSION 2 CACHE STRING "Pick a version for C# compiler to use: 1, 2 or 3")
+set(DESIRED_CSHARP_COMPILER_VERSION 2 CACHE STRING "Pick a version for C# compiler to use: 1, 2, 3 or 4")
 mark_as_advanced(DESIRED_CSHARP_COMPILER_VERSION)
 
 # default to v1:
@@ -54,29 +54,34 @@ endif()
 
 # CMAKE_CSHARP_COMPILER /platform and anycpu
 if(WIN32)
-# There is a subttle issue when compiling on 64bits platform using a 32bits compiler
-# See bug ID: 3510023 (BadImageFormatException: An attempt was made to load a progr)
+  # There is a subttle issue when compiling on 64bits platform using a 32bits compiler
+  # See bug ID: 3510023 (BadImageFormatException: An attempt was made to load a progr)
+  set(CSC_ACCEPTS_PLATFORM_FLAG 0)
 
-set(CSC_ACCEPTS_PLATFORM_FLAG 0)
-
-if(CMAKE_CSHARP_COMPILER)
-  execute_process(COMMAND "${CMAKE_CSHARP_COMPILER}" "/?" OUTPUT_VARIABLE CSC_HELP)
-  # when cmd locale is in French it displays: "/platform:<chaine>" in english: "/platform:<string>"
-  # so only regex match in /platform:
-  if("${CSC_HELP}" MATCHES "/platform:")
-    set(CSC_ACCEPTS_PLATFORM_FLAG 1)
-  endif()
-endif()
-
-if(NOT DEFINED CSC_PLATFORM_FLAG)
-  set(CSC_PLATFORM_FLAG "")
-  if(CSC_ACCEPTS_PLATFORM_FLAG)
-    set(CSC_PLATFORM_FLAG "/platform:x86")
-    if("${CMAKE_SIZEOF_VOID_P}" GREATER 4)
-      set(CSC_PLATFORM_FLAG "/platform:x64")
+  if(CMAKE_CSHARP_COMPILER)
+    execute_process(COMMAND "${CMAKE_CSHARP_COMPILER}" "/?" OUTPUT_VARIABLE CSC_HELP)
+    # get version (no /version, so use /help output):
+    if("${CSC_HELP}" MATCHES "Compiler version")
+      string(REGEX REPLACE ".*Compiler version ([0-9\\.]+).*" "\\1" VERSION_STRING 
+        "${CSC_HELP}")
+      message(STATUS "Comp version: ${VERSION_STRING}")
+    endif()
+    # when cmd locale is in French it displays: "/platform:<chaine>" in english: "/platform:<string>"
+    # so only regex match in /platform:
+    if("${CSC_HELP}" MATCHES "/platform:")
+      set(CSC_ACCEPTS_PLATFORM_FLAG 1)
     endif()
   endif()
-endif()
+
+  if(NOT DEFINED CSC_PLATFORM_FLAG)
+    set(CSC_PLATFORM_FLAG "")
+    if(CSC_ACCEPTS_PLATFORM_FLAG)
+      set(CSC_PLATFORM_FLAG "/platform:x86")
+      if("${CMAKE_SIZEOF_VOID_P}" GREATER 4)
+        set(CSC_PLATFORM_FLAG "/platform:x64")
+      endif()
+    endif()
+  endif()
 endif()
 
 
@@ -175,7 +180,7 @@ macro(CSHARP_LINK_LIBRARIES name)
     ARGS ${CSHARP_EXECUTABLE_${name}_ARGS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     #DEPENDS ${csharp_cs_sources}
-    COMMENT "Create HelloWorld.exe"
+    COMMENT "Create ${name}.exe"
   )
 
   #message("DEBUG2:${csharp_libraries_depends}")

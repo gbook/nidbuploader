@@ -31,6 +31,11 @@
  * It's a software from http://rentgenprom.ru/ , shipped with universal digital radiographic units
  * "ProScan-2000". The Ukrainian manufacturer developed own digital radiographic unit and it is
  * compatible with software from "ProScan-2000".
+ * Information found in DICOM file is:
+ * 
+ * (0008,0070) LO [ZAO "Renthenprom" (JSC Rentgenprom) ]             # 36,1 Manufacturer
+ * (0018,1020) LO [2.13.1.7]                                         # 8,1-n Software Version(s)
+ *
  */
 int main(int argc, char *argv[])
 {
@@ -61,7 +66,7 @@ int main(int argc, char *argv[])
   const char *ptr = bv->GetPointer();
   size_t len = bv->GetLength();
 
-  const char sig[] = "\x00\x00\x00\x00\x6A\x70\x32\x63";
+  static const unsigned char sig[] = {0,0,0,0,0x6A,0x70,0x32,0x63};
   if( memcmp(ptr, sig, sizeof(sig)) != 0 )
     {
     std::cerr << "magic random signature not found" << std::endl;

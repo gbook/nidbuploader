@@ -27,7 +27,7 @@
 #include <vector>
 #include <sstream>
 
-namespace gdcm
+namespace gdcm_ns
 {
 
 struct void_;
@@ -631,7 +631,6 @@ public:
     assert( Internal == 0 );
     if( own ) // make a copy:
       {
-      assert( /*array &&*/ numel );
       Internal = new ArrayType[numel];
       if( array && numel )
         std::copy(array, array+numel, Internal);
@@ -764,7 +763,7 @@ public:
 
 
 // For particular case for ASCII string
-// WARNING: This template explicitely instanciates a particular
+// WARNING: This template explicitly instanciates a particular
 // EncodingImplementation THEREFORE it is required to be declared after the
 // EncodingImplementation is needs (doh!)
 #if 0
@@ -954,7 +953,7 @@ public:
 //template<>
 //class Attribute<VR::AS> : public Attribute<VR::AS, VRToLength<VR::AS>::Length >
 
-// only 0010 1010 AS 1 Patient’s Age
+// only 0010 1010 AS 1 Patient's Age
 template<>
 class Attribute<VR::AS, VM::VM5>
 {
@@ -1045,6 +1044,6 @@ public:
  * This is a C++ example on how to use gdcm::Attribute
  */
 
-} // namespace gdcm
+} // namespace gdcm_ns
 
 #endif //GDCMATTRIBUTE_H

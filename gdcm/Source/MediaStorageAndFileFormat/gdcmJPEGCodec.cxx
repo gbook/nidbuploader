@@ -27,7 +27,7 @@
 namespace gdcm
 {
 
-JPEGCodec::JPEGCodec():BitSample(0),Lossless(true),Quality(100)
+JPEGCodec::JPEGCodec():BitSample(0)/*,Lossless(true)*/,Quality(100)
 {
   Internal = NULL;
 }
@@ -50,12 +50,12 @@ double JPEGCodec::GetQuality() const
 
 void JPEGCodec::SetLossless(bool l)
 {
-  Lossless = l;
+  LossyFlag = !l;
 }
 
 bool JPEGCodec::GetLossless() const
 {
-  return Lossless;
+  return !LossyFlag;
 }
 
 bool JPEGCodec::CanDecode(TransferSyntax const &ts) const
@@ -136,6 +136,8 @@ void JPEGCodec::SetBitSample(int bit)
     Internal->SetDimensions( this->GetDimensions() );
     Internal->SetPlanarConfiguration( this->GetPlanarConfiguration() );
     Internal->SetPhotometricInterpretation( this->GetPhotometricInterpretation() );
+    Internal->SetLossless( this->GetLossless() );
+    Internal->SetQuality( this->GetQuality() );
     Internal->ImageCodec::SetPixelFormat( this->ImageCodec::GetPixelFormat() );
     //Internal->SetNeedOverlayCleanup( this->AreOverlaysInPixelData() );
     }
@@ -239,7 +241,7 @@ bool JPEGCodec::Decode(DataElement const &in, DataElement &out)
       }
     }
   //assert( pos == len );
-  const size_t sizeOfOs = os.tellp();
+  const size_t sizeOfOs = (size_t)os.tellp();
   os.seekp( 0, std::ios::beg );
   ByteValue * bv = new ByteValue;
   bv->SetLength( (uint32_t)sizeOfOs );
@@ -322,6 +324,7 @@ bool JPEGCodec::Code(DataElement const &in, DataElement &out)
   //sq->GetTable().SetByteValue( dummy, sizeof(dummy) );
 
   const ByteValue *bv = in.GetByteValue();
+  if(!bv) return false; // broken DICOM file ?
   const unsigned int *dims = this->GetDimensions();
   const char *input = bv->GetPointer();
   unsigned long len = bv->GetLength();
@@ -469,7 +472,7 @@ bool JPEGCodec::DecodeExtent(
     size_t buf_size = 0;
 
     const Tag seqDelItem(0xfffe,0xe0dd);
-    gdcm::Fragment frag;
+    Fragment frag;
     unsigned int nfrags = 0;
     try
       {
@@ -563,7 +566,7 @@ bool JPEGCodec::DecodeExtent(
   else if ( NumberOfDimensions == 3 )
     {
     const Tag seqDelItem(0xfffe,0xe0dd);
-    gdcm::Fragment frag;
+    Fragment frag;
     std::streamoff thestart = is.tellg();
     unsigned int numfrags = 0;
     std::vector< size_t > offsets;
@@ -571,8 +574,8 @@ bool JPEGCodec::DecodeExtent(
       {
       //std::streamoff relstart = is.tellg();
       //assert( relstart - thestart == 8 );
-      std::streamoff off = frag.GetVL();
-      offsets.push_back( off );
+      const std::streamoff off = frag.GetVL();
+      offsets.push_back( (size_t)off );
       is.seekg( off, std::ios::cur );
       ++numfrags;
       }
@@ -586,7 +589,7 @@ bool JPEGCodec::DecodeExtent(
 
     for( unsigned int z = zmin; z <= zmax; ++z )
       {
-      size_t curoffset = std::accumulate( offsets.begin(), offsets.begin() + z, 0 );
+      size_t curoffset = std::accumulate( offsets.begin(), offsets.begin() + z, size_t(0) );
       is.seekg( thestart + curoffset + 8 * z, std::ios::beg );
       is.seekg( 8, std::ios::cur );
 
@@ -642,8 +645,8 @@ ImageCodec * JPEGCodec::Clone() const
   assert( copy->PF == PF );
   //copy->SetupJPEGBitCodec( BitSample );
   copy->SetPixelFormat( GetPixelFormat() );
-  assert( copy->BitSample == BitSample );
-  copy->Lossless = Lossless;
+  assert( copy->BitSample == BitSample || BitSample == 0 );
+  //copy->Lossless = Lossless;
   copy->Quality = Quality;
 
   return copy;
@@ -654,6 +657,35 @@ bool JPEGCodec::EncodeBuffer( std::ostream & out,
 {
   assert( Internal );
   return Internal->EncodeBuffer(out, inbuffer, inlen);
+}
+
+bool JPEGCodec::StartEncode( std::ostream & )
+{
+  return true;
+}
+bool JPEGCodec::IsRowEncoder()
+{
+  return true;
+}
+bool JPEGCodec::IsFrameEncoder()
+{
+  assert(0);
+  return false;
+}
+bool JPEGCodec::AppendRowEncode( std::ostream & os, const char * data, size_t datalen)
+{
+  return EncodeBuffer(os, data, datalen );
+}
+// TODO: technically the frame encoder could use the row encoder when present
+// this could reduce code duplication
+bool JPEGCodec::AppendFrameEncode( std::ostream & , const char * , size_t )
+{
+  assert(0);
+  return false;
+}
+bool JPEGCodec::StopEncode( std::ostream & )
+{
+  return true;
 }
 
 } // end namespace gdcm

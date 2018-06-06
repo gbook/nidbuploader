@@ -26,11 +26,11 @@ class TransferSyntax;
 /**
  * \brief FileChangeTransferSyntax
  *
- * This class is a file-based replacement of the in-memory
- * ImageChangeTransferSyntax
+ * \details This class is a file-based (limited) replacement of the in-memory
+ * ImageChangeTransferSyntax.
  *
- * This class provide a file-based compression mecanism. It will take in an
- * uncompressed DICOM image file (Pixel Data element). Then then produced as
+ * This class provide a file-based compression-only mechanism. It will take in
+ * an uncompressed DICOM image file (Pixel Data element). Then produced as
  * output a compressed DICOM file (Transfer Syntax will be updated).
  *
  * Currently it supports the following transfer syntax:
@@ -63,6 +63,7 @@ public:
 
 private:
   bool InitializeCopy();
+  bool UpdateCompressionLevel(double level);
   FileChangeTransferSyntaxInternals *Internals;
 };
 

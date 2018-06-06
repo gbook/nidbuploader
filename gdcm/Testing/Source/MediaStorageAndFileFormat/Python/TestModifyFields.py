@@ -19,7 +19,7 @@ def TestModifyFields(filename):
   outfilename = filename + ".rewrite"
   r = gdcm.Reader()
   r.SetFileName( filename )
-  sucess = r.Read()
+  success = r.Read()
   #print r.GetFile().GetDataSet()
 
   ds = r.GetFile().GetDataSet()
@@ -41,7 +41,7 @@ def TestModifyFields(filename):
   # let's insert a new dataelement
   # <entry group="0012" element="0062" vr="CS" vm="1" name="Patient Identity Removed"/>
   pir = gdcm.DataElement( gdcm.Tag(0x0012,0x0062) )
-  pir.SetVR( gdcm.VR( gdcm.VR.CS ) ) # specify the VR explicitely
+  pir.SetVR( gdcm.VR( gdcm.VR.CS ) ) # specify the VR explicitly
   yes = "YES"
   pir.SetByteValue( yes, gdcm.VL(len(yes)) )
   ds.Insert( pir )
@@ -63,22 +63,22 @@ def TestModifyFields(filename):
   #w = gdcm.Writer()
   #w.SetFileName( outfilename )
   #w.SetFile( r.GetFile() )
-  #sucess = w.Write()
-  return sucess
+  #success = w.Write()
+  return success
 
 if __name__ == "__main__":
-  sucess = 0
+  success = 0
   try:
     filename = os.sys.argv[1]
-    sucess += TestModifyFields( filename, True )
+    success += TestModifyFields( filename, True )
   except:
     # loop over all files:
     t = gdcm.Testing()
     nfiles = t.GetNumberOfFileNames()
     for i in range(0,nfiles):
       filename = t.GetFileName(i)
-      sucess += TestModifyFields( filename )
+      success += TestModifyFields( filename )
 
 
   # Test succeed ?
-  sys.exit(sucess == 0)
+  sys.exit(success == 0)

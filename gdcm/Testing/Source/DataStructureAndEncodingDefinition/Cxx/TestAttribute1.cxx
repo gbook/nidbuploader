@@ -111,7 +111,7 @@ int TestAttributeDS()
   if( ipp.GetNumberOfValues() != numvalues ) return 1;
 
   for(unsigned int i = 0; i < numvalues; ++i)
-    if( fabs(ipp.GetValue(i) - values[i]) > std::numeric_limits<float>::epsilon() ) return 1;
+    if( fabs(ipp.GetValue(i) - values[i]) > std::numeric_limits<double>::epsilon() ) return 1;
 
   ipp.Print( std::cout );
   std::cout << std::endl;
@@ -124,7 +124,7 @@ int TestAttributeDS()
   if( ipp.GetNumberOfValues() != numvalues ) return 1;
 
   for(unsigned int i = 0; i < numvalues; ++i)
-    if( fabs(ipp.GetValue(i) - newvalues[i]) > std::numeric_limits<float>::epsilon() ) return 1;
+    if( fabs(ipp.GetValue(i) - newvalues[i]) > std::numeric_limits<double>::epsilon() ) return 1;
 
   ipp.Print( std::cout );
   std::cout << std::endl;
@@ -145,7 +145,8 @@ int TestAttributeDS()
   gdcm::DataElement valid = pw.GetAsDataElement();
   std::ostringstream os;
   os << valid.GetValue();
-  size_t l = os.str().size();
+  std::string s = os.str();
+  size_t l = s.size();
   if( l > 16 )
     {
     return 1;
@@ -180,6 +181,7 @@ int TestAttributeIS()
 int TestAttributeLO() { return 0; }
 int TestAttributeLT() { return 0; }
 int TestAttributeOB() { return 0; }
+int TestAttributeOD() { return 0; }
 int TestAttributeOF()
 {
   gdcm::DataSet ds;
@@ -199,6 +201,7 @@ int TestAttributeOF()
 
   return 0;
 }
+int TestAttributeOL() { return 0; }
 int TestAttributeOW() { return 0; }
 int TestAttributePN() { return 0; }
 int TestAttributeSH() { return 0; }
@@ -230,7 +233,9 @@ int TestAttribute1(int , char *[])
   numerrors += TestAttributeLO();
   numerrors += TestAttributeLT();
   numerrors += TestAttributeOB();
+  numerrors += TestAttributeOD();
   numerrors += TestAttributeOF();
+  numerrors += TestAttributeOL();
   numerrors += TestAttributeOW();
   numerrors += TestAttributePN();
   numerrors += TestAttributeSH();

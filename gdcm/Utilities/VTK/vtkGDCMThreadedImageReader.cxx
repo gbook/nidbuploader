@@ -2,7 +2,7 @@
 
   Program: GDCM (Grassroots DICOM). A DICOM library
 
-  Copyright (c) 2006-2011 Mathieu Malaterre
+  Copyright (c) 2006-2016 Mathieu Malaterre
   All rights reserved.
   See Copyright.txt or http://gdcm.sourceforge.net/Copyright.html for details.
 
@@ -34,13 +34,16 @@
 #include <pthread.h>
 #include <unistd.h> // sysconf
 
+#ifdef _WIN32
+#include <windows.h> // SYSTEM_INFO (mingw)
+#endif
+
 #ifdef __APPLE__
-// For some reason sysconf + _SC_NPROCESSORS_ONLN is documented on macosx tiger, but it does not compile
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
 
-vtkCxxRevisionMacro(vtkGDCMThreadedImageReader, "$Revision: 1.1 $")
+//vtkCxxRevisionMacro(vtkGDCMThreadedImageReader, "$Revision: 1.1 $")
 vtkStandardNewMacro(vtkGDCMThreadedImageReader)
 
 // Output Ports are as follow:
@@ -446,8 +449,11 @@ void vtkGDCMThreadedImageReader::ReadFiles(unsigned int nfiles, const char *file
   const unsigned int nprocs = (unsigned int)sysconf( _SC_NPROCESSORS_ONLN );
 #else
 #ifdef __APPLE__
-  int count = 1;
+  int32_t count = 1;
   size_t size = sizeof(count);
+
+  // hw.ncpu is deprecated and should be replaced with hw.logicalcpu one day.
+  // hw.logicalcpu exists since at least 10.8, but maybe not earlier...
   int res = sysctlbyname("hw.ncpu",&count,&size,NULL,0);
   if( res == -1 )
     {

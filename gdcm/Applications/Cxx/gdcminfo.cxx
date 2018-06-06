@@ -30,6 +30,8 @@
 #include "gdcmMD5.h"
 #include "gdcmSystem.h"
 #include "gdcmDirectory.h"
+#include "gdcmImageHelper.h"
+#include "gdcmSplitMosaicFilter.h"
 
 #ifdef GDCM_USE_SYSTEM_POPPLER
 #include <poppler/poppler-config.h>
@@ -108,7 +110,7 @@ static int checkdeflated(const char *name)
     return 1;
     }
   buf = (unsigned char*)malloc(size);
-  if (buf != NULL && (size1 = fread(buf, 1, size, in)) != size) {
+  if (buf != NULL && (size1 = (unsigned long)fread(buf, 1, size, in)) != size) {
     free(buf);
     buf = NULL;
     fprintf( stderr, "could not fread: %lu bytes != %lu\n", size, size1 );
@@ -192,7 +194,11 @@ static std::string getInfoDate(Dict *infoDict, const char *key)
   //char buf[256];
   std::string out;
 
+#ifdef LIBPOPPLER_NEW_OBJECT_API
+  if ((obj = infoDict->lookup((char*)key)).isString())
+#else
   if (infoDict->lookup((char*)key, &obj)->isString())
+#endif
     {
     s = obj.getString()->getCString();
     if (s[0] == 'D' && s[1] == ':')
@@ -240,7 +246,9 @@ static std::string getInfoDate(Dict *infoDict, const char *key)
         out = date;
       }
     }
+#ifndef LIBPOPPLER_NEW_OBJECT_API
   obj.free();
+#endif
   return out;
 }
 
@@ -254,7 +262,11 @@ static std::string getInfoString(Dict *infoDict, const char *key, UnicodeMap *uM
   int i, n;
   std::string out;
 
+#ifdef LIBPOPPLER_NEW_OBJECT_API
+  if ((obj = infoDict->lookup((char*)key)).isString())
+#else
   if (infoDict->lookup((char*)key, &obj)->isString())
+#endif
     {
     s1 = obj.getString();
     if ((s1->getChar(0) & 0xff) == 0xfe &&
@@ -286,7 +298,9 @@ static std::string getInfoString(Dict *infoDict, const char *key, UnicodeMap *uM
       out.append( std::string(buf, n) );
       }
     }
+#ifndef LIBPOPPLER_NEW_OBJECT_API
   obj.free();
+#endif
   return out;
 }
 #endif
@@ -316,6 +330,10 @@ static void PrintHelp()
   //std::cout << "     --media-storage-uid   return media storage uid only." << std::endl;
   //std::cout << "     --media-storage-name  return media storage name only (when possible)." << std::endl;
 //  std::cout << "  -b --check-big-endian   check if file is ." << std::endl;
+  std::cout << "     --force-rescale    force rescale." << std::endl;
+  std::cout << "     --force-spacing    force spacing." << std::endl;
+  std::cout << "     --mosaic           dump image information of MOSAIC." << std::endl;
+
   std::cout << "General Options:" << std::endl;
   std::cout << "  -V --verbose   more verbose (warning+error)." << std::endl;
   std::cout << "  -W --warning   print warning info." << std::endl;
@@ -330,6 +348,7 @@ static void PrintHelp()
   int deflated = 0; // check deflated
   int checkcompression = 0;
   int md5sum = 0;
+  int mosaic = 0;
 
 static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs )
 {
@@ -378,27 +397,42 @@ static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs
       std::cerr << "Could not read image from: " << filename << std::endl;
       return 1;
       }
-    //const gdcm::File &file = reader.GetFile();
-    //const gdcm::DataSet &ds = file.GetDataSet();
+    gdcm::SplitMosaicFilter filter;
+    const gdcm::Image *pimage = NULL;
     const gdcm::Image &image = reader.GetImage();
-    const double *dircos = image.GetDirectionCosines();
+    if( mosaic )
+    {
+      filter.SetImage( image );
+      filter.SetFile( reader.GetFile() );
+      if( !filter.Split() )
+      {
+      std::cerr << "Could not split mosaic : " << filename << std::endl;
+      return 1;
+      }
+      pimage = &filter.GetImage();
+    }
+    else
+    {
+    pimage = &image;
+    }
+    const double *dircos = pimage->GetDirectionCosines();
     gdcm::Orientation::OrientationType type = gdcm::Orientation::GetType(dircos);
     const char *label = gdcm::Orientation::GetLabel( type );
-    image.Print( std::cout );
+    pimage->Print( std::cout );
     std::cout << "Orientation Label: " << label << std::endl;
     if( checkcompression )
       {
-      bool lossy = image.IsLossy();
+      bool lossy = pimage->IsLossy();
       std::cout << "Encapsulated Stream was found to be: " << (lossy ? "lossy" : "lossless") << std::endl;
       }
 
     if( md5sum )
       {
-      char *buffer = new char[ image.GetBufferLength() ];
-      if( image.GetBuffer( buffer ) )
+      char *buffer = new char[ pimage->GetBufferLength() ];
+      if( pimage->GetBuffer( buffer ) )
         {
         char digest[33] = {};
-        gdcm::MD5::Compute( buffer, image.GetBufferLength(), digest );
+        gdcm::MD5::Compute( buffer, pimage->GetBufferLength(), digest );
         std::cout << "md5sum: " << digest << std::endl;
         }
       else
@@ -430,7 +464,11 @@ static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs
     MemStream *appearStream;
 
     appearStream = new MemStream((char*)bv->GetPointer(), 0,
+#ifdef LIBPOPPLER_NEW_OBJECT_API
+      bv->GetLength(), std::move(appearDict));
+#else
       bv->GetLength(), &appearDict);
+#endif
     GooString *ownerPW, *userPW;
     ownerPW = NULL;
     userPW = NULL;
@@ -458,7 +496,11 @@ static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs
     Object info;
     if (doc->isOk())
       {
+#ifdef LIBPOPPLER_NEW_OBJECT_API
+      info = doc->getDocInfo();
+#else
       doc->getDocInfo(&info);
+#endif
       if (info.isDict())
         {
         title        = getInfoString(info.getDict(), "Title",    uMap);
@@ -469,9 +511,15 @@ static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs
         producer     = getInfoString(info.getDict(), "Producer", uMap);
         creationdate = getInfoDate(  info.getDict(), "CreationDate"  );
         moddate      = getInfoDate(  info.getDict(), "ModDate"       );
+#ifndef LIBPOPPLER_NEW_OBJECT_API
         info.free();
+#endif
         }
+#ifdef LIBPOPPLER_CATALOG_HAS_STRUCTTREEROOT
+      const char *tagged = doc->getStructTreeRoot() ? "yes" : "no";
+#else
       const char *tagged = doc->getStructTreeRoot()->isDict() ? "yes" : "no";
+#endif
       int pages = doc->getNumPages();
       const char *encrypted = doc->isEncrypted() ? "yes" : "no";
       //  printf("yes (print:%s copy:%s change:%s addNotes:%s)\n",
@@ -533,6 +581,9 @@ int main(int argc, char *argv[])
   int c;
   std::string filename;
   std::string xmlpath;
+  int forcerescale = 0;
+  int forcespacing = 0;
+
   int resourcespath = 0;
   int verbose = 0;
   int warning = 0;
@@ -550,6 +601,9 @@ int main(int argc, char *argv[])
         {"resources-path", 0, &resourcespath, 1},
         {"md5sum", 0, &md5sum, 1},
         {"check-compression", 0, &checkcompression, 1},
+        {"force-rescale", 0, &forcerescale, 1},
+        {"force-spacing", 0, &forcespacing, 1},
+        {"mosaic", 0, &mosaic, 1},
 
         {"verbose", 0, &verbose, 1},
         {"warning", 0, &warning, 1},
@@ -669,6 +723,9 @@ int main(int argc, char *argv[])
     PrintHelp();
     return 0;
     }
+
+  gdcm::ImageHelper::SetForceRescaleInterceptSlope(forcerescale ? true : false);
+  gdcm::ImageHelper::SetForcePixelSpacing(forcespacing ? true : false);
 
   if( filename.empty() )
     {

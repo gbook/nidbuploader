@@ -80,11 +80,12 @@ public:
     RLELossless,
     MPEG2MainProfile,
     ImplicitVRBigEndianACRNEMA,
-#ifdef GDCM_SUPPORT_BROKEN_IMPLEMENTATION
     WeirdPapryus,
-#endif
     CT_private_ELE,
     JPIPReferenced,
+    MPEG2MainProfileHighLevel,
+    MPEG4AVCH264HighProfileLevel4_1,
+    MPEG4AVCH264BDcompatibleHighProfileLevel4_1,
     TS_END
   } TSType;
 
@@ -116,11 +117,11 @@ public:
 
   bool IsEncapsulated() const;
 
-  /** Return if the transfer syntax algorithm is a lossy algorithm */
+  /** Return true if the transfer syntax algorithm is a lossy algorithm */
   bool IsLossy() const;
-  /** Return if the transfer syntax algorithm is a lossless algorithm */
+  /** Return true if the transfer syntax algorithm is a lossless algorithm */
   bool IsLossless() const;
-  /** return if TransFer Syntax Allow storing of Lossy Pixel Data */
+  /** return true if TransFer Syntax Allow storing of Lossy Pixel Data */
   bool CanStoreLossy() const;
 
   const char *GetString() const { return TransferSyntax::GetTSString(TSField); }

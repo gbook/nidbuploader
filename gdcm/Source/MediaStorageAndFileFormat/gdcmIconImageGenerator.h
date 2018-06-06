@@ -22,8 +22,8 @@ namespace gdcm
 class IconImageGeneratorInternals;
 /**
  * \brief IconImageGenerator
- * This filter will generate a valid Icon from the Pixel Data element (an
- * instance of gdcm::Pixmap).
+ * \details This filter will generate a valid Icon from the Pixel Data element (an
+ * instance of Pixmap).
  * To generate a valid Icon, one is only allowed the following Photometric
  * Interpretation:
  * - MONOCHROME1
@@ -57,7 +57,7 @@ public:
   /// LargestImagePixelValue DICOM attribute.
   void SetPixelMinMax(double min, double max);
 
-  /// Instead of explicitely specifying the min/max value for the rescale
+  /// Instead of explicitly specifying the min/max value for the rescale
   /// operation, let the internal mechanism compute the min/max of icon and
   /// rescale to best appropriate.
   void AutoPixelMinMax(bool b);

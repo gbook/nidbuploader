@@ -508,7 +508,7 @@ basic_unzip_streambuf<charT, traits>::fill_input_buffer(void)
       if( _istream.eof() )
         {
         // Ok so we reached the end of file, since we did not read no header
-        // we have to explicitely tell zlib the compress stream ends, therefore
+        // we have to explicitly tell zlib the compress stream ends, therefore
         // we add an extra \0 character...it may not always be needed...
         assert( nbytesread < (std::streamsize)(_input_buffer.size() / sizeof(char_type)) );
         _input_buffer[ (unsigned int)nbytesread ] = 0;
@@ -533,6 +533,11 @@ basic_unzip_streambuf<charT, traits>::fill_input_buffer(void)
 // PUBLIC
 //-----------------------------------------------------------------------------
 
+#if defined(_MSC_VER)
+# pragma warning (push)
+# pragma warning (disable:4355)
+#endif
+
 /**
  */
 template <class charT, class traits> inline
@@ -552,6 +557,10 @@ basic_zip_ostream<charT, traits>::basic_zip_ostream(ostream_reference ostream,
     if(_is_gzip)
         add_header();
 }
+
+#if defined(_MSC_VER)
+# pragma warning (pop)
+#endif
 
 /** Destructor
  */
@@ -658,6 +667,11 @@ basic_zip_ostream<charT,traits>& basic_zip_ostream<charT, traits>::add_footer(vo
 // PUBLIC
 //-----------------------------------------------------------------------------
 
+#if defined(_MSC_VER)
+# pragma warning (push)
+# pragma warning (disable:4355)
+#endif
+
 /** Constructor
  */
 template <class charT, class traits>
@@ -678,6 +692,10 @@ basic_zip_istream<charT, traits>::basic_zip_istream(istream_reference istream,
     //std::cerr << "check_header:" << check << std::endl;
     }
 }
+
+#if defined(_MSC_VER)
+# pragma warning (pop)
+#endif
 
 /** returns true if it is a gzip file
  */

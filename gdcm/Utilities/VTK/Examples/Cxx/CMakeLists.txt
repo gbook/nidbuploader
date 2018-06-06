@@ -5,10 +5,18 @@ include_directories(
 
 if( "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" GREATER 5.0 )
   set(GDCM_VTK_APPS
+    CreateFakeRTDOSE
+    CreateFakePET
     ConvertSingleBitTo8Bits
     GenerateRTSTRUCT
     offscreenimage
   )
+  if( ${VTK_MAJOR_VERSION} GREATER 5 )
+    set(GDCM_VTK_APPS
+      ${GDCM_VTK_APPS}
+      Compute3DSpacing
+      )
+  endif()
   if(VTK_USE_RENDERING OR vtkRenderingCore_LOADED)
     set(GDCM_VTK_APPS
       ${GDCM_VTK_APPS}

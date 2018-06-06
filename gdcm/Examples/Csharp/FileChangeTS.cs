@@ -14,7 +14,7 @@
 
 /*
  * Simple C# example
- * 
+ *
  * Shows multiple steps:
  * Steps 1.
  * Create a fake (dummy) DICOM file, with size 512 x 512 x 2 We use a small

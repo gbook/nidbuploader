@@ -26,6 +26,8 @@ struct StreamOffset
 #endif
 
 static const StreamOffset gdcmSelectedTagsOffsetDataFiles[] = {
+{ "SC16BitsAllocated_8BitsStoredJ2K.dcm", 752},
+{ "SC16BitsAllocated_8BitsStoredJPEG.dcm", 946},
 { "CT-MONO2-12-lomb-an2.acr",1222 },
 { "LIBIDO-8-ACR_NEMA-Lena_128_128.acr",174 },
 { "MR-MONO2-12-an2.acr",1858 },
@@ -220,6 +222,17 @@ static const StreamOffset gdcmSelectedTagsOffsetDataFiles[] = {
 { "lena512_rot90.j2k.dcm",756 },
 { "ELSCINT1_PMSCT_RLE1_priv.dcm",298002 },
 { "00191113.dcm",922 },
+{ "SIEMENS_SYNGO-12-MONO2-LUTWrongLength512.dcm", 48714 },
+{ "JPEGNote_empty.dcm", 704 },
+{ "JPEGLS_CharLS_10742.dcm", 748 },
+{ "JPEGLosslessYBR_FULL_422.dcm", 802 },
+{ "JPEGNote_missing.dcm", 596 },
+{ "JPEGNote_bogus.dcm", 722 },
+{ "RLEDebianBug816607Orig.dcm", 768 },
+{ "IllegalGroup2ImplicitTS.dcm", 2264 },
+{ "JPEG_LS_InvalidEscapeSequence_COM_padding.dcm", 752 },
+{ "LengthOfItemLarger.dcm", 12748 },
+{ "GE_MR_0025xx1bProtocolDataBlockXML.dcm",6462 },
 { "dicomdir_Acusson_WithPrivate_WithSR",3826 },
 { "dicomdir_Pms_WithVisit_WithPrivate_WithStudyComponents",37218 },
 { "dicomdir_Pms_With_heavy_embedded_sequence",3003414 },

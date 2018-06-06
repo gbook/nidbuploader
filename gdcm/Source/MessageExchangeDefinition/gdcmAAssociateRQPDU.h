@@ -30,7 +30,7 @@ namespace network
 class AAssociateACPDU;
 /**
  * \brief AAssociateRQPDU
- * Table 9-11 ASSOCIATE-RQ PDU fields
+ * \details Table 9-11 ASSOCIATE-RQ PDU fields
  */
 class AAssociateRQPDU : public BasePDU
 {
@@ -80,7 +80,7 @@ public:
   PresentationContextArrayType const &GetPresentationContexts() { return PresContext; }
 
   const PresentationContextRQ *GetPresentationContextByID(uint8_t i) const;
-  const PresentationContextRQ *GetPresentationContextByAbstractSyntax(AbstractSyntax const & as ) const;
+  const PresentationContextRQ *GetPresentationContextByAbstractSyntax(AbstractSyntax const & absyn ) const;
   bool IsLastFragment() const { return true; }
 
   const UserInformation & GetUserInformation() const { return UserInfo; }

@@ -43,15 +43,15 @@ class VTK_EXPORT vtkGDCMThreadedImageReader : public vtkGDCMImageReader
 {
 public:
   static vtkGDCMThreadedImageReader *New();
-  vtkTypeRevisionMacro(vtkGDCMThreadedImageReader,vtkGDCMImageReader);
+  vtkTypeMacro(vtkGDCMThreadedImageReader,vtkGDCMImageReader);
   virtual void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
-  // Explicitely set the Rescale Intercept (0028,1052)
+  // Explicitly set the Rescale Intercept (0028,1052)
   vtkSetMacro(Shift,double);
 
   // Description:
-  // Explicitely get/set the Rescale Slope (0028,1053)
+  // Explicitly get/set the Rescale Slope (0028,1053)
   vtkSetMacro(Scale,double);
 
   // Description:

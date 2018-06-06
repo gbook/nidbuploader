@@ -8,7 +8,6 @@ option(GDCM_SUPPORT_BROKEN_IMPLEMENTATION "Handle broken DICOM" ON)
 mark_as_advanced(
   GDCM_ALWAYS_TRACE_MACRO
   GDCM_SUPPORT_BROKEN_IMPLEMENTATION
-  GDCM_AUTOLOAD_GDCMJNI
   )
 
 #if(WIN32)
@@ -20,7 +19,14 @@ mark_as_advanced(
 
 CHECK_INCLUDE_FILE_CONCAT("sys/time.h"     GDCM_HAVE_SYS_TIME_H)
 CHECK_INCLUDE_FILE_CONCAT("winsock.h"       GDCM_HAVE_WINSOCK_H)
-CHECK_INCLUDE_FILE_CONCAT("byteswap.h"       GDCM_HAVE_BYTESWAP_H)
+CHECK_INCLUDE_FILE_CONCAT("byteswap.h"       GDCM_HAVE_BYTESWAP_FILE_H)
+# see bug #324
+if(GDCM_HAVE_BYTESWAP_FILE_H)
+  include(CheckCXXSourceCompiles)
+  CHECK_CXX_SOURCE_COMPILES(
+    "\#include <byteswap.h>\nint main() { return bswap_32( 42 ); }"
+    GDCM_HAVE_BYTESWAP_H)
+endif()
 CHECK_INCLUDE_FILE("rpc.h"       GDCM_HAVE_RPC_H)
 CHECK_INCLUDE_FILE("langinfo.h"       GDCM_HAVE_LANGINFO_H)
 
@@ -41,9 +47,19 @@ CHECK_FUNCTION_EXISTS(strptime    GDCM_HAVE_STRPTIME)
 CHECK_FUNCTION_EXISTS(_stricmp    GDCM_HAVE__STRICMP)
 CHECK_FUNCTION_EXISTS(_strnicmp   GDCM_HAVE__STRNICMP)
 CHECK_FUNCTION_EXISTS(_snprintf   GDCM_HAVE__SNPRINTF)
+# This is C99
+set(CMAKE_REQUIRED_INCLUDES math.h)
+set(CMAKE_REQUIRED_LIBRARIES m)
+check_function_exists(lround GDCM_HAVE_LROUND)
 
 #include(CheckSymbolExists)
 CHECK_FUNCTION_EXISTS(gettimeofday GDCM_HAVE_GETTIMEOFDAY)
+# json-c API changed:
+if(GDCM_USE_SYSTEM_JSON)
+  set(CMAKE_REQUIRED_INCLUDES ${JSON_INCLUDE_DIRS})
+  set(CMAKE_REQUIRED_LIBRARIES ${JSON_LIBRARIES})
+  CHECK_SYMBOL_EXISTS(json_object_object_get_ex "json.h" GDCM_HAVE_JSON_OBJECT_OBJECT_GET_EX)
+endif()
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(
@@ -168,27 +184,32 @@ set(Common_SRCS ${Common_SRCS}
 endif()
 
 add_library(gdcmCommon ${Common_SRCS})
-set_target_properties(gdcmCommon PROPERTIES ${GDCM_LIBRARY_PROPERTIES} LINK_INTERFACE_LIBRARIES "")
 
 #target_link_libraries(gdcmCommon ${GDCM_ZLIB_LIBRARIES}) # ${GDCM_POLARSSL_LIBRARIES})
 if(GDCM_BUILD_TESTING)
-target_link_libraries(gdcmCommon gdcmmd5 )
+  target_link_libraries(gdcmCommon LINK_PRIVATE gdcmmd5)
 endif()
 if(APPLE)
-  target_link_libraries(gdcmCommon ${COREFOUNDATION_LIBRARY})
+  if(GDCM_USE_COREFOUNDATION_LIBRARY)
+    target_link_libraries(gdcmCommon LINK_PRIVATE ${COREFOUNDATION_LIBRARY})
+  endif()
 endif()
 if(UNIX)
-  target_link_libraries(gdcmCommon ${CMAKE_DL_LIBS})
+  target_link_libraries(gdcmCommon LINK_PRIVATE ${CMAKE_DL_LIBS})
 endif()
 
 if(WIN32)
-  target_link_libraries(gdcmCommon ws2_32)
-  target_link_libraries(gdcmCommon crypt32)
+  target_link_libraries(gdcmCommon LINK_PRIVATE ws2_32)
+  target_link_libraries(gdcmCommon LINK_PRIVATE crypt32)
 endif()
 
 if(GDCM_USE_SYSTEM_OPENSSL)
   include_directories(${OPENSSL_INCLUDE_DIR})
-  target_link_libraries(gdcmCommon ${OPENSSL_LIBRARIES})
+  target_link_libraries(gdcmCommon LINK_PRIVATE ${OPENSSL_LIBRARIES})
+endif()
+set_target_properties(gdcmCommon PROPERTIES ${GDCM_LIBRARY_PROPERTIES})
+if(BUILD_SHARED_LIBS)
+  #set_target_properties(gdcmCommon PROPERTIES INTERFACE_LINK_LIBRARIES "" LINK_INTERFACE_LIBRARIES "")
 endif()
 
 # libs

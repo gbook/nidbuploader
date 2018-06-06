@@ -20,7 +20,7 @@
 #include "gdcmSequenceOfItems.h"
 #include "gdcmCodeString.h"
 
-namespace gdcm
+namespace gdcm_ns
 {
 
 static const char *MSStrings[] = {
@@ -135,6 +135,11 @@ static const char *MSStrings[] = {
   "1.2.840.10008.5.1.4.1.1.77.1.5.1", // OphthalmicPhotography8BitImageStorage
   "1.2.840.10008.5.1.4.1.1.77.1.5.4", // OphthalmicTomographyImageStorage
   "1.2.840.10008.5.1.4.1.1.77.1.2",   // VL Microscopic Image Storage
+  "1.2.840.10008.5.1.4.1.1.130", // Enhanced PET Image Storage
+  "1.2.840.10008.5.1.4.1.1.77.1.4.1", // Video Photographic Image Storage
+  "1.2.840.10008.5.1.4.1.1.13.1.2", // XRay3DCraniofacialImageStorage
+  "1.2.840.10008.5.1.4.1.1.14.1", // IVOCTForPresentation,
+  "1.2.840.10008.5.1.4.1.1.14.2", // IVCOTForProcessing,
   0
 };
 
@@ -302,7 +307,7 @@ static const MSModalityType MSModalityTypes[] = {
   {"XA", 3, 0},// Enhanced XA Image Storage
   {"  ", 2, 0},// RTIonBeamsTreatmentRecordStorage
   {"SEG", 3, 0},// Surface Segmentation Storage
-  {"SM", 2, 0},// VLWholeSlideMicroscopyImageStorage
+  {"SM", 3, 0},// VLWholeSlideMicroscopyImageStorage
   {"RTRECORD", 2, 0},//RTTreatmentSummaryRecordStorage
   {"US", 3, 0},// EnhancedUSVolumeStorage
   {"  ", 2, 0},// XRayRadiationDoseSR
@@ -312,6 +317,11 @@ static const MSModalityType MSModalityTypes[] = {
   {"OP", 2, 0},// OphthalmicPhotography8BitImageStorage
   {"OPT", 3, 0},// OphthalmicTomographyImageStorage
   {"GM", 3, 0},// VLMicroscopicImageStorage
+  {"PT", 3, 0},//PETImageStorage,
+  {"XC", 3, 0},// VideoPhotographicImageStorage
+  {"DX", 3, 0},// XRay3DCraniofacialImageStorage
+  {"IVOCT", 3, 0},// IVOCTForPresentation,
+  {"IVOCT", 3, 0},// IVCOTForProcessing,
 
   {NULL, 0, 0} //MS_END
 };
@@ -353,7 +363,7 @@ unsigned int MediaStorage::GetModalityDimension() const
   return MSModalityTypes[MSField].Dimension;
 }
 
-void MediaStorage::GuessFromModality(const char *modality, unsigned int dim)
+void MediaStorage::GuessFromModality(const char *modality, unsigned int dim )
 {
   // no default value is set, it is up to the user to decide initial value
   if( !modality || !dim ) return;
@@ -480,7 +490,9 @@ void MediaStorage::SetFromSourceImageSequence(DataSet const &ds)
 bool MediaStorage::SetFromModality(DataSet const &ds)
 {
   // Ok let's try againg with little luck it contains a pixel data...
-  if( ds.FindDataElement( Tag(0x7fe0,0x0010) ) )
+  // technically GDCM is called with a template DataSet before Pixel Data
+  // is even set, so do not check for presence of this attribute at this point
+  //if( ds.FindDataElement( Tag(0x7fe0,0x0010) ) )
     {
     // Pixel Data found !
     // Attempt to recover from the modality (0008,0060):
@@ -506,8 +518,9 @@ bool MediaStorage::SetFromModality(DataSet const &ds)
       MSField = MediaStorage::SecondaryCaptureImageStorage;
       return false;
       }
+    return true;
     }
-  return true;
+  //return false;
 }
 
 bool MediaStorage::SetFromFile(File const &file)
@@ -601,4 +614,4 @@ bool MediaStorage::SetFromFile(File const &file)
   return true;
 }
 
-} // end namespace gdcm
+} // end namespace gdcm_ns

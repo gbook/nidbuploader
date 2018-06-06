@@ -48,6 +48,8 @@
 #include "gdcmSequenceOfItems.h"
 #include "gdcmASN1.h"
 #include "gdcmAttribute.h"
+#include "gdcmBase64.h"
+#include "gdcmTagKeywords.h"
 
 #include <string>
 #include <iostream>
@@ -144,11 +146,54 @@ static void printbinary(std::istream &is, PDFElement const & pdfel )
   printvalue(is, type, numels, pos);
 }
 
+static void ProcessSDSDataInt( std::istream & is )
+{
+  (void)is;
+  std::cerr << "TODO" << std::endl;
+}
+
+// see read_direct_string / read_direct_int
+static void ProcessSDSDataString( std::istream & is )
+{
+  (void)is;
+#if 0
+  int32_t v1;
+  is.read( (char*)&v1,sizeof(v1));
+  assert( v1 == 0x1 );
+  uint32_t bla;
+  is.read( (char*)&bla, sizeof(bla) );
+  char name0[32];
+  memset(name0,0,sizeof(name0));
+  assert( bla < sizeof(name0) );
+  is.read( name0, bla);
+  size_t l = strlen(name0);
+  assert( l == bla );
+  std::cerr << "name0:" << name0 << std::endl;
+
+  is.read( (char*)&bla, sizeof(bla) );
+  assert( bla == 0x1 );
+  is.read( (char*)&bla, sizeof(bla) );
+  char value[32];
+  memset(value,0,sizeof(value));
+  assert( bla < sizeof(value) );
+  is.read( value, bla);
+  is.read( (char*)&bla, sizeof(bla) );
+  assert( bla == 0 ); // trailing stuff ?
+  is.read( (char*)&bla, sizeof(bla) );
+  assert( bla == 0 ); // trailing stuff ?
+  const uint32_t cur = (uint32_t)is.tellg();
+  std::cerr << "offset:" << cur << std::endl;
+#else
+  std::cerr << "TODO" << std::endl;
+#endif
+}
+
 static void ProcessSDSData( std::istream & is )
 {
   // havent been able to figure out what was the begin meant for
   is.seekg( 0x20 - 8 );
   uint32_t version = 0;
+  assert( sizeof(uint32_t) == 4 );
   is.read( (char*)&version, sizeof(version) );
   assert( version == 8 );
   uint32_t numel = 0;
@@ -212,9 +257,23 @@ static int DumpPMS_MRSDS(const gdcm::DataSet & ds)
       {
       s4 = std::string( bv4->GetPointer(), bv4->GetLength() );
       }
-    std::istringstream is( s3 );
     std::cout << "PMS/Item name: [" << s1 << "/" << s2 << "/" << s4 << "]" << std::endl;
-    ProcessSDSData( is );
+    if( bv3 ) {
+      std::istringstream is( s3 );
+      char v1 = is.peek();
+      if( v1 == 0x1 ) {
+        if( s1 == "HARDWARE_CONFIG " )
+          ProcessSDSDataInt( is );
+        else if( s1 == "COILSTATE " )
+          ProcessSDSDataString( is );
+        else
+          assert(0);
+      } else {
+        ProcessSDSData( is );
+      }
+    } else {
+      std::cout << " EMPTY !" << std::endl;
+    }
     }
   return 0;
 }
@@ -228,7 +287,7 @@ static int DumpTOSHIBA_MEC_CT3(const gdcm::DataSet & ds)
   const gdcm::ByteValue *bv = data.GetByteValue();
   if( !bv ) return 1;
 
-  const int offset = 24;
+  const unsigned int offset = 24;
   if( bv->GetLength() < offset )
     {
     std::cerr << "Not enough header" << std::endl;
@@ -764,6 +823,58 @@ static int PrintPDB(const std::string & filename, bool verbose)
   return ret;
 }
 
+static int PrintCSABase64(const std::string & filename, const char * name)
+{
+  gdcm::Reader reader;
+  reader.SetFileName( filename.c_str() );
+  if( !reader.Read() )
+  {
+    std::cerr << "Failed to read: " << filename << std::endl;
+    return 1;
+  }
+  const gdcm::DataSet& ds = reader.GetFile().GetDataSet();
+
+  gdcm::CSAHeader csa;
+  const gdcm::PrivateTag &t1 = csa.GetCSAImageHeaderInfoTag();
+  if( !ds.FindDataElement( t1 ) ) return 1;
+  csa.LoadFromDataElement( ds.GetDataElement( t1 ) );
+
+  if( csa.FindCSAElementByName(name) )
+  {
+    const gdcm::CSAElement & el = csa.GetCSAElementByName(name);
+    if( el.IsEmpty() ) return 1;
+    const gdcm::ByteValue* bv = el.GetByteValue();
+    std::string str( bv->GetPointer(), bv->GetLength() );
+    str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+    size_t dl = gdcm::Base64::GetDecodeLength( str.c_str(), str.size() );
+    std::vector<char> buf;
+    buf.resize( dl );
+    size_t dl2 = gdcm::Base64::Decode( &buf[0], buf.size(), str.c_str(), str.size() );
+    if( dl != dl2 ) return 1;
+    std::stringstream ss;
+    ss.str( std::string(&buf[0], buf.size()) );
+    gdcm::File file;
+    gdcm::DataSet &ds2 = file.GetDataSet();
+    gdcm::DataElement xde;
+    try
+    {
+      while( xde.Read<gdcm::ExplicitDataElement,gdcm::SwapperNoOp>( ss ) )
+      {
+        ds2.Insert( xde );
+      }
+      assert( ss.eof() );
+    }
+    catch(std::exception &)
+    {
+      return 1;
+    }
+    gdcm::Printer p;
+    p.SetFile( file );
+    p.Print(std::cout);
+  }
+  return 0;
+}
+
 static int PrintCSA(const std::string & filename)
 {
   gdcm::Reader reader;
@@ -854,6 +965,70 @@ static int PrintCSA(const std::string & filename)
   return ret;
 }
 
+static int PrintMrProtocol(const std::string & filename)
+{
+  gdcm::Reader reader;
+  reader.SetFileName( filename.c_str() );
+  if( !reader.Read() )
+  {
+    std::cerr << "Failed to read: " << filename << std::endl;
+    return 1;
+  }
+
+  gdcm::CSAHeader csa;
+  const gdcm::DataSet& ds = reader.GetFile().GetDataSet();
+  gdcm::MrProtocol mrprot;
+  const gdcm::PrivateTag att1(0x21,0x19,"SIEMENS MR SDS 01");
+  const gdcm::PrivateTag att2(0x21,0xfe,"SIEMENS MR SDS 01");
+  bool found = false;
+  namespace kwd = gdcm::Keywords;
+  kwd::SharedFunctionalGroupsSequence sfgs;
+  (void)sfgs;
+  if( csa.GetMrProtocol(ds, mrprot))
+  {
+    found = true;
+  }
+  else if( ds.FindDataElement( att1) )
+  {
+    const gdcm::DataElement &data = ds.GetDataElement( att1 );
+    const gdcm::ByteValue *bv = data.GetByteValue();
+    static const char csastr[] = "PhoenixMetaProtocol"; // FIXME
+    if( mrprot.Load( bv, csastr, -1))
+      found = true;
+  }
+  // SIEMENS now supports Enhanced MR
+  else if( ds.FindDataElement( sfgs.GetTag() ) )
+  {
+    const gdcm::DataElement &shared = ds.GetDataElement( sfgs.GetTag() );
+    gdcm::SmartPointer<gdcm::SequenceOfItems> sqi = shared.GetValueAsSQ();
+    if( sqi != NULL && sqi->GetNumberOfItems() == 1 ) {
+      gdcm::Item &item = sqi->GetItem(1);
+      gdcm::DataSet & subds = item.GetNestedDataSet();
+      if( subds.FindDataElement( att2) ) {
+        const gdcm::DataElement &privsq = subds.GetDataElement( att2 );
+        gdcm::SmartPointer<gdcm::SequenceOfItems> sqi2 = privsq.GetValueAsSQ();
+        if( sqi2 != NULL && sqi2->GetNumberOfItems() == 1 ) {
+          gdcm::Item &item2 = sqi2->GetItem(1);
+          gdcm::DataSet & subds2 = item2.GetNestedDataSet();
+          if( subds2.FindDataElement( att1) ) {
+            const gdcm::DataElement &data = subds2.GetDataElement( att1 );
+            const gdcm::ByteValue *bv = data.GetByteValue();
+            static const char csastr[] = "PhoenixMetaProtocol"; // FIXME
+            if( mrprot.Load( bv, csastr, -1))
+              found = true;
+          }
+        }
+      }
+    }
+  }
+
+  if( found )
+    std::cout << mrprot;
+  else
+    std::cerr << "Could not find MrProtocol/MrPhoenixProtocol ASCII section" << std::endl;
+
+  return found ? 0 : 1;
+}
 
 
 static void PrintVersion()
@@ -877,6 +1052,9 @@ static void PrintHelp()
   std::cout << "  -p --print          print value instead of simply dumping (default)." << std::endl;
   std::cout << "  -c --color          print in color." << std::endl;
   std::cout << "  -C --csa            print SIEMENS CSA Header (0029,[12]0,SIEMENS CSA HEADER)." << std::endl;
+  std::cout << "     --csa-asl        print decoded SIEMENS CSA MR_ASL (base64)." << std::endl;
+  std::cout << "     --csa-diffusion  print decoded SIEMENS CSA MRDiffusion (base64)." << std::endl;
+  std::cout << "     --mrprotocol     print SIEMENS CSA MrProtocol only (within ASCCONV BEGIN/END)." << std::endl;
   std::cout << "  -P --pdb            print GEMS Protocol Data Block (0025,1b,GEMS_SERS_01)." << std::endl;
   std::cout << "     --elscint        print ELSCINT Protocol Information (01f7,26,ELSCINT1)." << std::endl;
   std::cout << "     --vepro          print VEPRO Protocol Information (0055,20,VEPRO VIF 3.0 DATA)." << std::endl;
@@ -906,6 +1084,10 @@ int main (int argc, char *argv[])
   int dump = 0;
   int print = 0;
   int printcsa = 0;
+  int printmrprotocol = 0;
+  int printcsabase64 = 0;
+  int printcsaasl = 0;
+  int printcsadiffusion = 0;
   int printpdb = 0;
   int printelscint = 0;
   int printvepro = 0;
@@ -953,6 +1135,9 @@ int main (int argc, char *argv[])
         {"vepro", 0, &printvepro, 1},
         {"sds", 0, &printsds, 1},
         {"ct3", 0, &printct3, 1},
+        {"csa-asl", 0, &printcsaasl, 1},
+        {"csa-diffusion", 0, &printcsadiffusion, 1},
+        {"mrprotocol", 0, &printmrprotocol, 1},
         {0, 0, 0, 0} // required
     };
     static const char short_options[] = "i:xrpdcCPAVWDEhvI";
@@ -1124,6 +1309,18 @@ int main (int argc, char *argv[])
     std::cerr << "Not handled for now" << std::endl;
     }
 
+  const char * csaname = NULL;
+  if( printcsaasl )
+  {
+    printcsabase64 = 1;
+    csaname = "MR_ASL";
+  }
+  else if( printcsadiffusion )
+  {
+    printcsabase64 = 1;
+    csaname = "MRDiffusion";
+  }
+
   // else
   int res = 0;
   if( !gdcm::System::FileExists(filename.c_str()) )
@@ -1169,6 +1366,14 @@ int main (int argc, char *argv[])
       else if( printcsa )
         {
         res += PrintCSA(*it);
+        }
+      else if( printmrprotocol )
+        {
+        res += PrintMrProtocol(*it);
+        }
+      else if( printcsabase64 )
+        {
+        res += PrintCSABase64(*it, csaname);
         }
       else if( dump )
         {
@@ -1216,6 +1421,14 @@ int main (int argc, char *argv[])
     else if( printcsa )
       {
       res += PrintCSA(filename);
+      }
+    else if( printmrprotocol )
+      {
+      res += PrintMrProtocol(filename);
+      }
+    else if( printcsabase64 )
+      {
+      res += PrintCSABase64(filename, csaname);
       }
     else if( dump )
       {

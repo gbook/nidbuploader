@@ -79,12 +79,25 @@ void ImageRegionReader::SetRegion(Region const & region)
 
 Region const &ImageRegionReader::GetRegion() const
 {
-  return *Internals->GetRegion();
+  if( Internals->GetRegion() )
+    {
+    return *Internals->GetRegion();
+    }
+  else
+    {
+    static BoxRegion full;
+    std::vector<unsigned int> dims = ImageHelper::GetDimensionsValue(GetFile());
+    full.SetDomain(0, dims[0] - 1,
+                   0, dims[1] - 1,
+                   0, dims[2] - 1 );
+    return full;
+    }
 }
 
 size_t ImageRegionReader::ComputeBufferLength() const
 {
   // Is this a legal extent:
+  size_t npixels = 0;
   if( Internals->GetRegion() )
     {
     if( !Internals->GetRegion()->IsValid() )
@@ -92,10 +105,26 @@ size_t ImageRegionReader::ComputeBufferLength() const
       gdcmDebugMacro( "Sorry not a valid extent. Giving up" );
       return 0;
       }
+    npixels = this->Internals->GetRegion()->Area();
     }
-  PixelFormat pixelInfo = ImageHelper::GetPixelFormatValue(GetFile());
-  size_t bytesPerPixel = pixelInfo.GetPixelSize();
-  return this->Internals->GetRegion()->Area()*bytesPerPixel;
+  else
+    {
+    std::vector<unsigned int> dims = ImageHelper::GetDimensionsValue(GetFile());
+    BoxRegion full;
+    // Use BoxRegion to do robust computation
+    full.SetDomain(0, dims[0] - 1,
+                   0, dims[1] - 1,
+                   0, dims[2] - 1 );
+    if(! full.IsValid() )
+    {
+      gdcmDebugMacro( "Sorry not a valid extent. Giving up" );
+      return 0;
+     }
+    npixels = full.Area();
+    }
+  const PixelFormat pixelInfo = ImageHelper::GetPixelFormatValue(GetFile());
+  const size_t bytesPerPixel = pixelInfo.GetPixelSize();
+  return npixels*bytesPerPixel;
 }
 
 bool ImageRegionReader::ReadInformation()
@@ -176,6 +205,22 @@ bool ImageRegionReader::ReadInformation()
   return true;
 }
 
+BoxRegion ImageRegionReader::ComputeBoundingBox()
+{
+  BoxRegion boundingbox;
+  if( Internals->GetRegion() )
+    boundingbox = this->Internals->GetRegion()->ComputeBoundingBox();
+  else
+    {
+    std::vector<unsigned int> dims = ImageHelper::GetDimensionsValue(GetFile());
+    boundingbox.SetDomain(
+      0, dims[0] - 1,
+      0, dims[1] - 1,
+      0, dims[2] - 1 );
+    }
+  return boundingbox;
+}
+
 bool ImageRegionReader::ReadRAWIntoBuffer(char *buffer, size_t buflen)
 {
   (void)buflen;
@@ -199,7 +244,7 @@ bool ImageRegionReader::ReadRAWIntoBuffer(char *buffer, size_t buflen)
   theCodec.SetDimensions(ImageHelper::GetDimensionsValue(GetFile()));
   std::istream* theStream = GetStreamPtr();
 
-  const BoxRegion &boundingbox = this->Internals->GetRegion()->ComputeBoundingBox();
+  BoxRegion boundingbox = ComputeBoundingBox();
   unsigned int xmin = boundingbox.GetXMin();
   unsigned int xmax = boundingbox.GetXMax();
   unsigned int ymin = boundingbox.GetYMin();
@@ -233,8 +278,12 @@ bool ImageRegionReader::ReadRAWIntoBuffer(char *buffer, size_t buflen)
         {
         return false;
         }
-      memcpy(&(buffer[((z-zmin)*rowsize*colsize +
-            (y-ymin)*rowsize)*bytesPerPixel]),
+#if 0
+      const char * check = &(buffer[((z-zmin)*rowsize*colsize + (y-ymin)*rowsize)*bytesPerPixel]);
+      assert( check >= buffer && check < buffer + buflen );
+      assert( check + rowsize*bytesPerPixel <= buffer + buflen );
+#endif
+      memcpy(&(buffer[((z-zmin)*rowsize*colsize + (y-ymin)*rowsize)*bytesPerPixel]),
         tmpBuffer2, rowsize*bytesPerPixel);
       }
     }
@@ -268,7 +317,7 @@ bool ImageRegionReader::ReadRLEIntoBuffer(char *buffer, size_t buflen)
     theCodec.SetNumberOfDimensions( 3 );
 
   std::istream* theStream = GetStreamPtr();
-  const BoxRegion &boundingbox = this->Internals->GetRegion()->ComputeBoundingBox();
+  BoxRegion boundingbox = ComputeBoundingBox();
   unsigned int xmin = boundingbox.GetXMin();
   unsigned int xmax = boundingbox.GetXMax();
   unsigned int ymin = boundingbox.GetYMin();
@@ -279,7 +328,7 @@ bool ImageRegionReader::ReadRLEIntoBuffer(char *buffer, size_t buflen)
   assert( xmax >= xmin );
   assert( ymax >= ymin );
 
-  theCodec.DecodeExtent(
+  bool ret = theCodec.DecodeExtent(
     buffer,
     xmin, xmax,
     ymin, ymax,
@@ -287,7 +336,7 @@ bool ImageRegionReader::ReadRLEIntoBuffer(char *buffer, size_t buflen)
     *theStream
   );
 
-  return true;
+  return ret;
 }
 
 bool ImageRegionReader::ReadJPEG2000IntoBuffer(char *buffer, size_t buflen)
@@ -317,7 +366,7 @@ bool ImageRegionReader::ReadJPEG2000IntoBuffer(char *buffer, size_t buflen)
     theCodec.SetNumberOfDimensions( 3 );
 
   std::istream* theStream = GetStreamPtr();
-  const BoxRegion &boundingbox = this->Internals->GetRegion()->ComputeBoundingBox();
+  BoxRegion boundingbox = ComputeBoundingBox();
   unsigned int xmin = boundingbox.GetXMin();
   unsigned int xmax = boundingbox.GetXMax();
   unsigned int ymin = boundingbox.GetYMin();
@@ -328,7 +377,7 @@ bool ImageRegionReader::ReadJPEG2000IntoBuffer(char *buffer, size_t buflen)
   assert( xmax >= xmin );
   assert( ymax >= ymin );
 
-  theCodec.DecodeExtent(
+  bool ret = theCodec.DecodeExtent(
     buffer,
     xmin, xmax,
     ymin, ymax,
@@ -336,7 +385,7 @@ bool ImageRegionReader::ReadJPEG2000IntoBuffer(char *buffer, size_t buflen)
     *theStream
   );
 
-  return true;
+  return ret;
 }
 
 bool ImageRegionReader::ReadJPEGIntoBuffer(char *buffer, size_t buflen)
@@ -367,7 +416,7 @@ bool ImageRegionReader::ReadJPEGIntoBuffer(char *buffer, size_t buflen)
   theCodec.SetPixelFormat( ImageHelper::GetPixelFormatValue(GetFile()) );
 
   std::istream* theStream = GetStreamPtr();
-  const BoxRegion &boundingbox = this->Internals->GetRegion()->ComputeBoundingBox();
+  BoxRegion boundingbox = ComputeBoundingBox();
   unsigned int xmin = boundingbox.GetXMin();
   unsigned int xmax = boundingbox.GetXMax();
   unsigned int ymin = boundingbox.GetYMin();
@@ -378,7 +427,7 @@ bool ImageRegionReader::ReadJPEGIntoBuffer(char *buffer, size_t buflen)
   assert( xmax >= xmin );
   assert( ymax >= ymin );
 
-  theCodec.DecodeExtent(
+  bool ret = theCodec.DecodeExtent(
     buffer,
     xmin, xmax,
     ymin, ymax,
@@ -386,7 +435,7 @@ bool ImageRegionReader::ReadJPEGIntoBuffer(char *buffer, size_t buflen)
     *theStream
   );
 
-  return true;
+  return ret;
 }
 
 bool ImageRegionReader::ReadJPEGLSIntoBuffer(char *buffer, size_t buflen)
@@ -416,7 +465,7 @@ bool ImageRegionReader::ReadJPEGLSIntoBuffer(char *buffer, size_t buflen)
     theCodec.SetNumberOfDimensions( 3 );
 
   std::istream* theStream = GetStreamPtr();
-  const BoxRegion &boundingbox = this->Internals->GetRegion()->ComputeBoundingBox();
+  BoxRegion boundingbox = ComputeBoundingBox();
   unsigned int xmin = boundingbox.GetXMin();
   unsigned int xmax = boundingbox.GetXMax();
   unsigned int ymin = boundingbox.GetYMin();
@@ -427,7 +476,7 @@ bool ImageRegionReader::ReadJPEGLSIntoBuffer(char *buffer, size_t buflen)
   assert( xmax >= xmin );
   assert( ymax >= ymin );
 
-  theCodec.DecodeExtent(
+  bool ret = theCodec.DecodeExtent(
     buffer,
     xmin, xmax,
     ymin, ymax,
@@ -435,12 +484,19 @@ bool ImageRegionReader::ReadJPEGLSIntoBuffer(char *buffer, size_t buflen)
     *theStream
   );
 
-  return true;
+  return ret;
 }
+
 bool ImageRegionReader::ReadIntoBuffer(char *buffer, size_t buflen)
 {
   size_t thelen = ComputeBufferLength();
-  if( buflen < thelen )
+  if( thelen == 0 )
+    {
+    // does not sound right, something seems odd.
+    gdcmDebugMacro( "Cannot load an image of 0 bytes" );
+    return false;
+    }
+   if( buflen < thelen )
     {
     gdcmDebugMacro( "buffer cannot be smaller than computed buffer length" );
     return false;

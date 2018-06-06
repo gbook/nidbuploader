@@ -24,7 +24,7 @@ class DataElement;
 class ImageCodec;
 /**
  * \brief ImageChangeTransferSyntax class
- * Class to change the transfer syntax of an input DICOM
+ * \details Class to change the transfer syntax of an input DICOM
  *
  * If only Force param is set but no input TransferSyntax is set, it is assumed
  * that user only wants to inspect encapsulated stream (advanced dev. option).
@@ -84,7 +84,7 @@ private:
 
 /**
  * \example StandardizeFiles.cs
- * This is a C++ example on how to use gdcm::ImageChangeTransferSyntax
+ * This is a C++ example on how to use ImageChangeTransferSyntax
  */
 
 } // end namespace gdcm

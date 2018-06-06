@@ -33,13 +33,6 @@ if(JavaProp_JAVA_HOME)
     ${JavaProp_JAVA_HOME}
     PATH
     )
-  #string(FIND "${javarealpath}" "${javahomesubdir}" res)
-  #if(-1 EQUAL ${res})
-  #  message(STATUS "Need to re-execute JavaProp")
-  #  file(REMOVE
-  #    ${CMAKE_BINARY_DIR}/GetSystemProperty.class
-  #    )
-  #endif()
   string(REGEX MATCH "${javahomesubdir}"
     outputvar
     "${javarealpath}"
@@ -57,7 +50,7 @@ if(${current_list_path}/GetSystemProperty.java IS_NEWER_THAN ${CMAKE_BINARY_DIR}
   #message("${current_list_path}/GetSystemProperty.java")
   #message("${CMAKE_CURRENT_BINARY_DIR}/GetSystemProperty.class")
   execute_process(
-    COMMAND ${Java_JAVAC_EXECUTABLE} -source 1.5 -target 1.5
+    COMMAND ${Java_JAVAC_EXECUTABLE} -source ${GDCM_JAVA_SOURCE_VERSION} -target ${GDCM_JAVA_TARGET_VERSION}
     ${current_list_path}/GetSystemProperty.java -d ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
@@ -81,7 +74,7 @@ if(${current_list_path}/GetSystemProperty.java IS_NEWER_THAN ${CMAKE_BINARY_DIR}
       OUTPUT_VARIABLE ${property_cmake_name}
       OUTPUT_STRIP_TRAILING_WHITESPACE
       )
-    #message("${property} : ${property_cmake_name} : ${${property_cmake_name}}")
+    #message(STATUS "${property} : ${property_cmake_name} : ${${property_cmake_name}}")
     set(JavaProp_${property_cmake_name} ${${property_cmake_name}}
       CACHE STRING "Java Prop Value for: ${property}" FORCE
       )

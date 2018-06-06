@@ -50,7 +50,7 @@ class VTK_EXPORT vtkImageMapToColors16 : public vtkThreadedImageAlgorithm
 {
 public:
   static vtkImageMapToColors16 *New();
-  vtkTypeRevisionMacro(vtkImageMapToColors16,vtkThreadedImageAlgorithm);
+  vtkTypeMacro(vtkImageMapToColors16,vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -81,7 +81,11 @@ public:
 
   // Description:
   // We need to check the modified time of the lookup table too.
+#ifdef VTK_HAS_MTIME_TYPE
+  virtual vtkMTimeType GetMTime();
+#else
   virtual unsigned long GetMTime();
+#endif
 
 protected:
   vtkImageMapToColors16();

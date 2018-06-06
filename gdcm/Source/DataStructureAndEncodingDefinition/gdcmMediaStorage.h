@@ -16,11 +16,13 @@
 
 #include "gdcmTransferSyntax.h"
 
-namespace gdcm
+namespace gdcm { class Tag; }
+namespace gdcm_ns
 {
-
+#if !defined(SWIGPYTHON) && !defined(SWIGCSHARP) && !defined(SWIGJAVA) && !defined(SWIGPHP)
+using namespace gdcm;
+#endif
 class DataSet;
-class Tag;
 class FileMetaInformation;
 class File;
 
@@ -126,6 +128,11 @@ public:
     OphthalmicPhotography8BitImageStorage, // 1.2.840.10008.5.1.4.1.1.77.1.5.1
     OphthalmicTomographyImageStorage, // 1.2.840.10008.5.1.4.1.1.77.1.5.4
     VLMicroscopicImageStorage,
+    EnhancedPETImageStorage,
+    VideoPhotographicImageStorage,
+    XRay3DCraniofacialImageStorage,
+    IVOCTForPresentation,
+    IVOCTForProcessing,
     MS_END
   } MSType; // Media Storage Type
 
@@ -204,6 +211,6 @@ inline std::ostream &operator<<(std::ostream &_os, const MediaStorage &ms)
 
 }
 
-} // end namespace gdcm
+} // end namespace gdcm_ns
 
 #endif // GDCMMEDIASTORAGE_H

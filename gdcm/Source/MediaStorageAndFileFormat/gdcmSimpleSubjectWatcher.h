@@ -26,7 +26,7 @@ namespace gdcm
 class Event;
 /**
  * \brief SimpleSubjectWatcher
- * This is a typical Subject Watcher class. It will observe all events.
+ * \details This is a typical Subject Watcher class. It will observe all events.
  */
 class GDCM_EXPORT SimpleSubjectWatcher
 {
@@ -51,7 +51,7 @@ protected:
   void TestAbortOff();
 
 private:
-  SmartPointer<gdcm::Subject> m_Subject;
+  SmartPointer<Subject> m_Subject;
   std::string m_Comment;
 
   typedef SimpleMemberCommand<SimpleSubjectWatcher> SimpleCommandType;

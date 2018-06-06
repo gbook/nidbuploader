@@ -27,7 +27,7 @@ namespace network
 
 /**
  * \brief PresentationContextRQ
- * Table 9-13
+ * \details Table 9-13
  * PRESENTATION CONTEXT ITEM FIELDS
  * \see PresentationContextAC
  */
@@ -46,7 +46,7 @@ public:
   const std::ostream &Write(std::ostream &os) const;
   size_t Size() const;
 
-  void SetAbstractSyntax( AbstractSyntax const & as );
+  void SetAbstractSyntax( AbstractSyntax const & absyn );
   AbstractSyntax const &GetAbstractSyntax() const { return SubItems; }
   AbstractSyntax &GetAbstractSyntax() { return SubItems; }
 

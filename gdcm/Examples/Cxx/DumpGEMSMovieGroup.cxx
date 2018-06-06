@@ -215,7 +215,7 @@ gdcm::SequenceOfItems *sqi_names, std::string const & indent )
 bool PrintNameValueMapping2( gdcm::PrivateTag const & privtag, const gdcm::DataSet & ds ,
   gdcm::SequenceOfItems *sqi_names, std::string const & indent )
 {
-  if( !ds.FindDataElement( privtag ) ) return 1;
+  if( !ds.FindDataElement( privtag ) ) return false;
   const gdcm::DataElement& seq_values = ds.GetDataElement( privtag );
   gdcm::SmartPointer<gdcm::SequenceOfItems> sqi = seq_values.GetValueAsSQ();
 
@@ -267,6 +267,7 @@ bool print73( gdcm::DataSet const & ds10, gdcm::SequenceOfItems *sqi_dict, std::
 
 bool print36( gdcm::DataSet const & ds10, gdcm::SequenceOfItems *sqi_dict, std::string const & indent )
 {
+  (void)sqi_dict;
   const gdcm::PrivateTag tseq_values36(0x7fe1,0x36,"GEMS_Ultrasound_MovieGroup_001");
   if( !ds10.FindDataElement( tseq_values36 ) )
     {
@@ -341,7 +342,7 @@ gdcm::SequenceOfItems *sqi_dict, std::string const & indent )
   if( !subds.FindDataElement( privtag0 ) )
     {
     assert( 0 );
-    return 1;
+    return false;
     }
   const gdcm::DataElement& seq_values10 = subds.GetDataElement( privtag0 );
   gdcm::SmartPointer<gdcm::SequenceOfItems> sqi_values10 = seq_values10.GetValueAsSQ();
@@ -366,7 +367,7 @@ gdcm::SequenceOfItems *sqi_dict, std::string const & indent )
     if( !ds10.FindDataElement( tseq_values20 ) )
       {
       assert( 0 );
-      return 1;
+      return false;
       }
     const gdcm::DataElement& seq_values20 = ds10.GetDataElement( tseq_values20 );
     gdcm::SmartPointer<gdcm::SequenceOfItems> sqi_values20 = seq_values20.GetValueAsSQ();

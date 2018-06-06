@@ -32,6 +32,12 @@ mark_as_advanced(QT_QMAKE_EXECUTABLE)
 endif()
 
 set(EXAMPLES_SRCS
+  EmptyMask
+  DumpSiemensBase64
+  TemplateEmptyImage
+  MakeTemplate
+  DeriveSeries
+  FixOrientation
   DumpGEMSMovieGroup
   QIDO-RS
   DumpExamCard
@@ -39,6 +45,7 @@ set(EXAMPLES_SRCS
   ExtractIconFromFile
   CreateJPIPDataSet
   DumpADAC
+  DumpToshibaDTI
   DumpImageHeaderInfo
   ReadMultiTimesException
   pmsct_rgb1
@@ -54,9 +61,11 @@ set(EXAMPLES_SRCS
   GetSequenceUltrasound
   ReadAndPrintAttributes
   ChangeSequenceUltrasound
+  ChangePrivateTags
   LargeVRDSExplicit
   ExtractEncryptedContent
   ReadAndDumpDICOMDIR
+  #ReadAndDumpDICOMDIR2 # commented out since requires C++11
   GenerateStandardSOPClasses
   ClinicalTrialAnnotate
   CheckBigEndianBug
@@ -82,14 +91,12 @@ set(EXAMPLES_SRCS
   GenSeqs
   GetJPEGSamplePrecision
 )
-if(GDCM_USE_OPENJPEG_V2)
-set(EXAMPLES_SRCS
-  ${EXAMPLES_SRCS}
-  StreamImageReaderTest
-  Extracting_All_Resolution
-  Fake_Image_Using_Stream_Image_Writer
-  )
-endif()
+#set(EXAMPLES_SRCS
+#  ${EXAMPLES_SRCS}
+#  StreamImageReaderTest
+#  Extracting_All_Resolution
+#  Fake_Image_Using_Stream_Image_Writer
+#  )
 if(GDCM_USE_JPEGLS)
 set(EXAMPLES_SRCS
   ${EXAMPLES_SRCS}
@@ -132,7 +139,7 @@ endif()
 if(BUILD_SHARED_LIBS)
   set_source_files_properties(FixJAIBugJPEGLS.cxx
                               PROPERTIES
-                              COMPILE_FLAGS -DCHARLS_SHARED
+                              COMPILE_FLAGS -DCHARLS_DLL
                               )
 endif()
 

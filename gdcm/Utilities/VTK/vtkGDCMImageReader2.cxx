@@ -49,7 +49,7 @@
 
 #include <sstream>
 
-vtkCxxRevisionMacro(vtkGDCMImageReader2, "$Revision: 1.1 $")
+//vtkCxxRevisionMacro(vtkGDCMImageReader2, "$Revision: 1.1 $")
 vtkStandardNewMacro(vtkGDCMImageReader2)
 
 static inline bool vtkGDCMImageReader2_IsCharTypeSigned()
@@ -294,6 +294,8 @@ int vtkGDCMImageReader2::RequestInformation(vtkInformation *request,
                                       vtkInformationVector **inputVector,
                                       vtkInformationVector *outputVector)
 {
+  (void)request;
+  (void)inputVector;
   int res = RequestInformationCompat();
   if( !res )
     {
@@ -457,7 +459,7 @@ int vtkGDCMImageReader2::RequestInformationCompat()
     return 0;
     }
   // I do not think this is a good idea anyway to let the user decide
-  // wether or not she wants *not* to apply shift/scale...
+  // whether or not she wants *not* to apply shift/scale...
   if( !this->ApplyShiftScale )
   {
     vtkErrorMacro("ApplyShiftScale not compatible" );
@@ -801,8 +803,13 @@ int vtkGDCMImageReader2::LoadSingleFile(const char *filename, char *pointer, uns
     gdcm::ImageHelper::GetDimensionsValue(reader.GetFile());
 #endif
 
+  const bool assume2d = this->FileNames && this->FileNames->GetNumberOfValues() >= 1;
+
   gdcm::BoxRegion box;
-  box.SetDomain(outExt[0], outExt[1], outExt[2], outExt[3], outExt[4], outExt[5]);
+  if( assume2d )
+    box.SetDomain(outExt[0], outExt[1], outExt[2], outExt[3], 0, 0);
+  else
+    box.SetDomain(outExt[0], outExt[1], outExt[2], outExt[3], outExt[4], outExt[5]);
   reader.SetRegion( box );
 
   gdcm::Image &image = reader.GetImage();
@@ -901,7 +908,11 @@ int vtkGDCMImageReader2::LoadSingleFile(const char *filename, char *pointer, uns
     {
     /*  image.GetBuffer(pointer); */
     bool b = reader.ReadIntoBuffer(pointer, len);
-    assert( b );
+    if( !b )
+    {
+      vtkErrorMacro( "Could not ReadIntoBuffer" );
+      return 0;
+    }
     }
 
   // Do the Icon Image:
@@ -1143,7 +1154,7 @@ int vtkGDCMImageReader2::RequestDataCompat()
   int outExt[6];
   output->GetExtent(outExt);
   // The dext is the whole extent (includes not-loaded data)
-  int *dext = this->GetDataExtent();
+  int *dext = this->GetDataExtent(); (void)dext;
 
   char * pointer = static_cast<char*>(output->GetScalarPointerForExtent(outExt));
   if( this->FileName )

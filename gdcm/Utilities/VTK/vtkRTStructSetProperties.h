@@ -28,11 +28,11 @@ class VTK_EXPORT vtkRTStructSetProperties : public vtkObject
 {
 public:
   static vtkRTStructSetProperties *New();
-  vtkTypeRevisionMacro(vtkRTStructSetProperties,vtkObject);
+  vtkTypeMacro(vtkRTStructSetProperties,vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
-  // Convenience method to reset all fields to an emptry string/value
+  // Convenience method to reset all fields to an empty string/value
   virtual void Clear();
 
   // Description:

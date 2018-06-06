@@ -472,25 +472,31 @@ void Curve::GetAsPoints(float *array) const
     // X
     if( genidx == 0 )
       for(int i = 0; i < Internal->NumberOfPoints; i++ )
-        array[3*i+0] = ComputeValueFromStartAndStep( i );
+        array[3*i+0] = (float)ComputeValueFromStartAndStep( i );
     else
       for(int i = 0; i < Internal->NumberOfPoints; i++ )
         array[3*i+0] = p[i + 0];
     // Y
     if( genidx == 1 )
       for(int i = 0; i < Internal->NumberOfPoints; i++ )
-        array[3*i+1] = ComputeValueFromStartAndStep( i );
+        array[3*i+1] = (float)ComputeValueFromStartAndStep( i );
     else
       {
       if( mult == 2 && genidx == -1 )
+        {
         for(int i = 0; i < Internal->NumberOfPoints; i++ )
           array[3*i+1] = p[i + 1];
+        }
       else if( mult == 2 && genidx == 0 )
+        {
         for(int i = 0; i < Internal->NumberOfPoints; i++ )
           array[3*i+1] = p[i + 0];
+        }
       else
+        {
         for(int i = 0; i < Internal->NumberOfPoints; i++ )
           array[3*i+1] = 0;
+        }
       }
     // Z
     for(int i = 0; i < Internal->NumberOfPoints; i++ )

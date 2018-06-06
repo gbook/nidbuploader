@@ -21,12 +21,12 @@
 #include <vector>
 #include <cstring> // strcmp
 
-namespace gdcm
+namespace gdcm_ns
 {
 
 /**
  * \brief Class to represent a Sequence Of Items
- * (value representation : SQ)
+ * \details (value representation : SQ)
  *  - a Value Representation for Data Elements that contains a sequence of Data Sets.
  *  - Sequence of Item allows for Nested Data Sets
  *
@@ -68,11 +68,21 @@ public:
 
   template <typename TDE>
   VL ComputeLength() const;
-  void Clear() {}
+
+  /// remove all items within the sequence
+  void Clear();
 
   /// \brief Appends an Item to the already added ones
   void AddItem(Item const &item);
+    
+  /// \brief Appends an Item to the already added ones
+  Item & AddNewUndefinedLengthItem();
 
+  /// Remove an Item as specified by its index, if index > size, false is returned
+  /// Index starts at 1 not 0
+  bool RemoveItemByIndex( const SizeType index );
+
+  bool IsEmpty() const { return Items.empty(); };
   SizeType GetNumberOfItems() const {  return Items.size(); }
   void SetNumberOfItems(SizeType n) {  Items.resize(n); }
 
@@ -246,7 +256,7 @@ public:
   ItemVector Items;
 };
 
-} // end namespace gdcm
+} // end namespace gdcm_ns
 
 #include "gdcmSequenceOfItems.txx"
 

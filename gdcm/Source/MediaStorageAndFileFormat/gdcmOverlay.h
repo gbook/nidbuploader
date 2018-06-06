@@ -109,7 +109,7 @@ public:
   /// return if the Overlay is stored in the pixel data or not
   bool IsInPixelData() const;
 
-  /// Set wether or no the OverlayData is in the Pixel Data:
+  /// Set whether or no the OverlayData is in the Pixel Data:
   void IsInPixelData(bool b);
 
   /// Decode the internal OverlayData (packed bits) into unpacked representation
@@ -124,6 +124,7 @@ public:
   bool GetUnpackBuffer(char *buffer, size_t len) const;
 
   Overlay(Overlay const &ov);
+  Overlay &operator=(Overlay const &ov);
 
 private:
   OverlayInternal *Internal;

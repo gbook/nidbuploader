@@ -20,7 +20,11 @@ include_regular_expression("^(gdcm).*$")
 # http://sourceforge.net/mailarchive/message.php?msg_id=29294773
 # 2.0.6 cannot be used because of a serious typemap bug in 2.0.5
 # http://sourceforge.net/mailarchive/message.php?msg_id=29305946
+if(GDCM_WEAK_SWIG_CHECK)
+find_package(SWIG 2.0.4 REQUIRED)
+else()
 find_package(SWIG 2.0.7 REQUIRED)
+endif()
 mark_as_advanced(SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 include(${SWIG_USE_FILE})
 
@@ -88,9 +92,9 @@ endif()
 #set (SWIG_MODULE_${MODULE_NAME}_EXTRA_DEPS ${SWIG_MODULE_${MODULE_NAME}_EXTRA_DEPS} ${CMAKE_CURRENT_SOURCE_DIR}/docstrings.i)
 SWIG_ADD_MODULE(${GDCM_PYTHON_IMPLEMENTATION_NAME} python gdcmswig.i gdcmPythonFilter.cxx)
 SWIG_LINK_LIBRARIES(${GDCM_PYTHON_IMPLEMENTATION_NAME} gdcmMEXD gdcmMSFF gdcmIOD)
-# Apparently on my UNIX, python module (/usr/lib/pyshared/pythonX.Y/*/*.so) do not explicitely
+# Apparently on my UNIX, python module (/usr/lib/pyshared/pythonX.Y/*/*.so) do not explicitly
 # link to python libraries...Leave default to always link to python libraries since
-# this is required at least on Apple & Win32, but leave the option to advanced user to explicitely
+# this is required at least on Apple & Win32, but leave the option to advanced user to explicitly
 # refuse linking to python libs (set GDCM_NO_PYTHON_LIBS_LINKING to ON):
 if(NOT GDCM_NO_PYTHON_LIBS_LINKING)
   SWIG_LINK_LIBRARIES(${GDCM_PYTHON_IMPLEMENTATION_NAME} ${PYTHON_LIBRARY})
@@ -109,6 +113,9 @@ if(WIN32 AND NOT CYGWIN)
   set_target_properties(${SWIG_MODULE_${GDCM_PYTHON_IMPLEMENTATION_NAME}_REAL_NAME} PROPERTIES SUFFIX ".pyd")
   # shared libs on windows needs to be fully resolved
   SWIG_LINK_LIBRARIES(${GDCM_PYTHON_IMPLEMENTATION_NAME} ${PYTHON_LIBRARIES})
+  message(STATUS "Will use pyd extension" )
+else()
+  message(STATUS "Will NOT use pyd extension" )
 endif()
 set_target_properties(${SWIG_MODULE_${GDCM_PYTHON_IMPLEMENTATION_NAME}_REAL_NAME} PROPERTIES LINK_INTERFACE_LIBRARIES "")
 

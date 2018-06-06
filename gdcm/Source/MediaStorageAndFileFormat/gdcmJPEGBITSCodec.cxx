@@ -551,7 +551,7 @@ UINT16 Y_density
     || cinfo.Y_density != 1
   )
     {
-    gdcmErrorMacro( "Pixel Density from JFIF Marker is not supported (for now)" );
+    gdcmWarningMacro( "Pixel Density from JFIF Marker is not supported (for now)" );
     //return false;
     }
 
@@ -793,9 +793,15 @@ bool JPEGBITSCodec::DecodeByStreams(std::istream &is, std::ostream &os)
     if( cinfo.image_width != dims[0]
       || cinfo.image_height != dims[1] )
       {
-      gdcmErrorMacro( "Unhandled: dimension mismatch. JPEG is " <<
+      gdcmWarningMacro( "dimension mismatch. JPEG is " <<
         cinfo.image_width << "," << cinfo.image_height << " while DICOM " << dims[0] <<
-        "," << dims[1]  ); // FIXME is this ok by standard ?
+        "," << dims[1]  ); 
+      //this->Dimensions[0] = cinfo.image_width;
+      //this->Dimensions[1] = cinfo.image_height;
+      /*
+       * Long story short, the real issue is that class such as ImageRegionReader expect to read the
+       * image information without ever touching the JPEG codestream...
+       */
       return false;
       }
     assert( cinfo.image_width == dims[0] );
@@ -1238,7 +1244,7 @@ bool JPEGBITSCodec::InternalCode(const char* input, unsigned long len, std::ostr
   case PhotometricInterpretation::ARGB:
   case PhotometricInterpretation::CMYK:
     // TODO !
-  case PhotometricInterpretation::UNKNOW:
+  case PhotometricInterpretation::UNKNOWN:
   case PhotometricInterpretation::PI_END: // To please compiler
     return false;
     }
@@ -1261,7 +1267,7 @@ bool JPEGBITSCodec::InternalCode(const char* input, unsigned long len, std::ostr
    * Basicaly you need to have point_transform = 0, but you can pick whichever predictor [1...7] you want
    * TODO: is there a way to pick the right predictor (best compression/fastest ?)
    */
-  if( Lossless )
+  if( !LossyFlag )
     {
     jpeg_simple_lossless (&cinfo, 1, 0);
     //jpeg_simple_lossless (&cinfo, 7, 0);
@@ -1270,7 +1276,7 @@ bool JPEGBITSCodec::InternalCode(const char* input, unsigned long len, std::ostr
   /* Now you can set any non-default parameters you wish to.
    * Here we just illustrate the use of quality (quantization table) scaling:
    */
-  if( Lossless )
+  if( !LossyFlag )
     {
     assert( Quality == 100 );
     }
@@ -1384,29 +1390,29 @@ bool JPEGBITSCodec::EncodeBuffer(std::ostream &os, const char *data, size_t data
 
   if( Internals->StateSuspension == 0 )
     {
-  /* Step 1: allocate and initialize JPEG compression object */
+    /* Step 1: allocate and initialize JPEG compression object */
 
-  /* We have to set up the error handler first, in case the initialization
-   * step fails.  (Unlikely, but it could happen if you are out of memory.)
-   * This routine fills in the contents of struct jerr, and returns jerr's
-   * address which we place into the link field in cinfo.
-   */
-  cinfo.err = jpeg_std_error(&jerr.pub);
-  /* Now we can initialize the JPEG compression object. */
-  jpeg_create_compress(&cinfo);
+    /* We have to set up the error handler first, in case the initialization
+     * step fails.  (Unlikely, but it could happen if you are out of memory.)
+     * This routine fills in the contents of struct jerr, and returns jerr's
+     * address which we place into the link field in cinfo.
+     */
+    cinfo.err = jpeg_std_error(&jerr.pub);
+    /* Now we can initialize the JPEG compression object. */
+    jpeg_create_compress(&cinfo);
 
-  /* Step 2: specify data destination (eg, a file) */
-  /* Note: steps 2 and 3 can be done in either order. */
+    /* Step 2: specify data destination (eg, a file) */
+    /* Note: steps 2 and 3 can be done in either order. */
 
-  /* Here we use the library-supplied code to send compressed data to a
-   * stdio stream.  You can also write your own code to do something else.
-   * VERY IMPORTANT: use "b" option to fopen() if you are on a machine that
-   * requires it in order to write binary files.
-   */
-  //if ((outfile = fopen(filename, "wb")) == NULL) {
-  //  fprintf(stderr, "can't open %s\n", filename);
-  //  exit(1);
-  //}
+    /* Here we use the library-supplied code to send compressed data to a
+     * stdio stream.  You can also write your own code to do something else.
+     * VERY IMPORTANT: use "b" option to fopen() if you are on a machine that
+     * requires it in order to write binary files.
+     */
+    //if ((outfile = fopen(filename, "wb")) == NULL) {
+    //  fprintf(stderr, "can't open %s\n", filename);
+    //  exit(1);
+    //}
     }
   if( Internals->StateSuspension == 0 )
     {
@@ -1425,37 +1431,37 @@ bool JPEGBITSCodec::EncodeBuffer(std::ostream &os, const char *data, size_t data
   }
 
   if( Internals->StateSuspension == 0 )
-{
-  switch( this->GetPhotometricInterpretation() )
     {
-  case PhotometricInterpretation::MONOCHROME1:
-  case PhotometricInterpretation::MONOCHROME2:
-  case PhotometricInterpretation::PALETTE_COLOR:
-    cinfo.input_components = 1;     /* # of color components per pixel */
-    cinfo.in_color_space = JCS_GRAYSCALE; /* colorspace of input image */
-    break;
-  case PhotometricInterpretation::RGB:
-  case PhotometricInterpretation::YBR_RCT:
-  case PhotometricInterpretation::YBR_ICT:
-    cinfo.input_components = 3;    /* # of color components per pixel */
-    cinfo.in_color_space = JCS_RGB;   /* colorspace of input image */
-    break;
-  case PhotometricInterpretation::YBR_FULL:
-  case PhotometricInterpretation::YBR_FULL_422:
-  case PhotometricInterpretation::YBR_PARTIAL_420:
-  case PhotometricInterpretation::YBR_PARTIAL_422:
-    cinfo.input_components = 3;    /* # of color components per pixel */
-    cinfo.in_color_space = JCS_YCbCr;   /* colorspace of input image */
-    break;
-  case PhotometricInterpretation::HSV:
-  case PhotometricInterpretation::ARGB:
-  case PhotometricInterpretation::CMYK:
-    // TODO !
-  case PhotometricInterpretation::UNKNOW:
-  case PhotometricInterpretation::PI_END: // To please compiler
-    return false;
+    switch( this->GetPhotometricInterpretation() )
+      {
+    case PhotometricInterpretation::MONOCHROME1:
+    case PhotometricInterpretation::MONOCHROME2:
+    case PhotometricInterpretation::PALETTE_COLOR:
+      cinfo.input_components = 1;     /* # of color components per pixel */
+      cinfo.in_color_space = JCS_GRAYSCALE; /* colorspace of input image */
+      break;
+    case PhotometricInterpretation::RGB:
+    case PhotometricInterpretation::YBR_RCT:
+    case PhotometricInterpretation::YBR_ICT:
+      cinfo.input_components = 3;    /* # of color components per pixel */
+      cinfo.in_color_space = JCS_RGB;   /* colorspace of input image */
+      break;
+    case PhotometricInterpretation::YBR_FULL:
+    case PhotometricInterpretation::YBR_FULL_422:
+    case PhotometricInterpretation::YBR_PARTIAL_420:
+    case PhotometricInterpretation::YBR_PARTIAL_422:
+      cinfo.input_components = 3;    /* # of color components per pixel */
+      cinfo.in_color_space = JCS_YCbCr;   /* colorspace of input image */
+      break;
+    case PhotometricInterpretation::HSV:
+    case PhotometricInterpretation::ARGB:
+    case PhotometricInterpretation::CMYK:
+      // TODO !
+    case PhotometricInterpretation::UNKNOWN:
+    case PhotometricInterpretation::PI_END: // To please compiler
+      return false;
+      }
     }
-}
   //if ( cinfo.process == JPROC_LOSSLESS )
   //  {
   //  cinfo.in_color_space = JCS_UNKNOWN;
@@ -1466,10 +1472,10 @@ bool JPEGBITSCodec::EncodeBuffer(std::ostream &os, const char *data, size_t data
    * (You must set at least cinfo.in_color_space before calling this,
    * since the defaults depend on the source color space.)
    */
-if( Internals->StateSuspension == 0 )
-{
-  jpeg_set_defaults(&cinfo);
-}
+  if( Internals->StateSuspension == 0 )
+    {
+    jpeg_set_defaults(&cinfo);
+    }
 
   /*
    * predictor = 1
@@ -1478,48 +1484,48 @@ if( Internals->StateSuspension == 0 )
    * Basicaly you need to have point_transform = 0, but you can pick whichever predictor [1...7] you want
    * TODO: is there a way to pick the right predictor (best compression/fastest ?)
    */
-if( Internals->StateSuspension == 0 )
-{
-  if( Lossless )
+  if( Internals->StateSuspension == 0 )
     {
-    jpeg_simple_lossless (&cinfo, 1, 0);
-    //jpeg_simple_lossless (&cinfo, 7, 0);
+    if( !LossyFlag )
+      {
+      jpeg_simple_lossless (&cinfo, 1, 0);
+      //jpeg_simple_lossless (&cinfo, 7, 0);
+      }
     }
-}
 
   /* Now you can set any non-default parameters you wish to.
    * Here we just illustrate the use of quality (quantization table) scaling:
    */
-  if( Lossless )
+  if( !LossyFlag )
     {
     assert( Quality == 100 );
     }
-if( Internals->StateSuspension == 0 )
-{
-  jpeg_set_quality(&cinfo, Quality, TRUE /* limit to baseline-JPEG values */);
-}
+  if( Internals->StateSuspension == 0 )
+    {
+    jpeg_set_quality(&cinfo, Quality, TRUE /* limit to baseline-JPEG values */);
+    }
 
-if( Internals->StateSuspension == 0 )
-{
-  /*
-   * See write_file_header
-   */
-  cinfo.write_JFIF_header = 0;
-}
+  if( Internals->StateSuspension == 0 )
+    {
+    /*
+     * See write_file_header
+     */
+    cinfo.write_JFIF_header = 0;
+    }
   //cinfo.density_unit = 2;
   //cinfo.X_density = 2;
   //cinfo.Y_density = 5;
 
   /* Step 4: Start compressor */
 
-if( Internals->StateSuspension == 0 )
-{
-  /* TRUE ensures that we will write a complete interchange-JPEG file.
-   * Pass TRUE unless you are very sure of what you're doing.
-   */
-  jpeg_start_compress(&cinfo, TRUE);
- Internals->StateSuspension = 1;
-}
+  if( Internals->StateSuspension == 0 )
+    {
+    /* TRUE ensures that we will write a complete interchange-JPEG file.
+     * Pass TRUE unless you are very sure of what you're doing.
+     */
+    jpeg_start_compress(&cinfo, TRUE);
+    Internals->StateSuspension = 1;
+    }
 
   /* Step 5: while (scan lines remain to be written) */
   /*           jpeg_write_scanlines(...); */
@@ -1531,12 +1537,12 @@ if( Internals->StateSuspension == 0 )
    */
   row_stride = image_width * cinfo.input_components;  /* JSAMPLEs per row in image_buffer */
 
-if ( Internals->StateSuspension == 1 )
-{
-  assert( this->GetPlanarConfiguration() == 0 );
-  assert( row_stride * sizeof(JSAMPLE) == datalen );
+  if ( Internals->StateSuspension == 1 )
     {
-    //while (cinfo.next_scanline < cinfo.image_height) {
+    assert( this->GetPlanarConfiguration() == 0 );
+    assert( row_stride * sizeof(JSAMPLE) == datalen );
+      {
+      //while (cinfo.next_scanline < cinfo.image_height) {
       /* jpeg_write_scanlines expects an array of pointers to scanlines.
        * Here the array is only one element long, but you could pass
        * more than one scanline at a time if that's more convenient.
@@ -1544,33 +1550,33 @@ if ( Internals->StateSuspension == 1 )
       row_pointer[0] = & image_buffer[cinfo.next_scanline * row_stride * 0];
       const JDIMENSION nscanline = jpeg_write_scanlines(&cinfo, row_pointer, 1);
       assert( nscanline == 1 ); (void)nscanline;
-    assert(cinfo.next_scanline <= cinfo.image_height);
-    //}
+      assert(cinfo.next_scanline <= cinfo.image_height);
+      //}
+      }
+    if(cinfo.next_scanline == cinfo.image_height)
+      {
+      Internals->StateSuspension = 2;
+      }
     }
-  if(cinfo.next_scanline == cinfo.image_height)
-    {
-Internals->StateSuspension = 2;
-    }
-}
 
   /* Step 6: Finish compression */
 
-if (Internals->StateSuspension == 2 )
-{
-  jpeg_finish_compress(&cinfo);
-  /* After finish_compress, we can close the output file. */
-  //fclose(outfile);
-}
+  if (Internals->StateSuspension == 2 )
+    {
+    jpeg_finish_compress(&cinfo);
+    /* After finish_compress, we can close the output file. */
+    //fclose(outfile);
+    }
 
   /* Step 7: release JPEG compression object */
 
-if (Internals->StateSuspension == 2 )
-{
-  /* This is an important step since it will release a good deal of memory. */
-  jpeg_destroy_compress(&cinfo);
+  if (Internals->StateSuspension == 2 )
+    {
+    /* This is an important step since it will release a good deal of memory. */
+    jpeg_destroy_compress(&cinfo);
 
-  Internals->StateSuspension = 0;
-}
+    Internals->StateSuspension = 0;
+    }
 
   /* And we're done! */
   return true;

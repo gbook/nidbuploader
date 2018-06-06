@@ -30,7 +30,7 @@
 #include "gdcmSequenceOfItems.h"
 #include "gdcmDirectoryHelper.h"
 
-vtkCxxRevisionMacro(vtkGDCMPolyDataReader, "$Revision: 1.74 $")
+//vtkCxxRevisionMacro(vtkGDCMPolyDataReader, "$Revision: 1.74 $")
 vtkStandardNewMacro(vtkGDCMPolyDataReader)
 
 //----------------------------------------------------------------------------
@@ -76,13 +76,13 @@ void vtkGDCMPolyDataReader::FillMedicalImageInformation(const gdcm::Reader &read
   this->MedicalImageProperties->SetPatientSex( gdcm::DirectoryHelper::GetStringValueFromTag( gdcm::Tag(0x0010,0x0040), ds).c_str() );
   // For ex: DICOM (0010,0030) = 19680427
   this->MedicalImageProperties->SetPatientBirthDate( gdcm::DirectoryHelper::GetStringValueFromTag( gdcm::Tag(0x0010,0x0030), ds).c_str() );
-#if ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0 )
+#if VTK_MAJOR_VERSION >= 6 || ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0 )
   // For ex: DICOM (0008,0020) = 20030617
   this->MedicalImageProperties->SetStudyDate( gdcm::DirectoryHelper::GetStringValueFromTag( gdcm::Tag(0x0008,0x0020), ds).c_str() );
 #endif
   // For ex: DICOM (0008,0022) = 20030617
   this->MedicalImageProperties->SetAcquisitionDate( gdcm::DirectoryHelper::GetStringValueFromTag( gdcm::Tag(0x0008,0x0022), ds).c_str() );
-#if ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0 )
+#if VTK_MAJOR_VERSION >= 6 || ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 0 )
   // For ex: DICOM (0008,0030) = 162552.0705 or 230012, or 0012
   this->MedicalImageProperties->SetStudyTime( gdcm::DirectoryHelper::GetStringValueFromTag( gdcm::Tag(0x0008,0x0030), ds).c_str() );
 #endif
@@ -505,7 +505,9 @@ refinstanceuid.GetValue().c_str() );
 
       if( contgeotype.GetValue() == "CLOSED_PLANAR " )
         {
-        assert( nestedds2.FindDataElement( gdcm::Tag(0x3006,0x0016) ) );
+        // http://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.8.8.6.html
+        if( nestedds2.FindDataElement( gdcm::Tag(0x3006,0x0016) ) )
+        {
         const gdcm::DataElement &contourimagesequence = nestedds2.GetDataElement( gdcm::Tag(0x3006,0x0016) );
         gdcm::SmartPointer<gdcm::SequenceOfItems> contourimagesequence_sqi = contourimagesequence.GetValueAsSQ();
         assert( contourimagesequence_sqi && contourimagesequence_sqi->GetNumberOfItems() == 1 );
@@ -519,6 +521,7 @@ refinstanceuid.GetValue().c_str() );
 
         this->RTStructSetProperties->AddContourReferencedFrameOfReference( pd,
           classat.GetValue(), instat.GetValue() );
+        }
         }
 
       //newPts->SetNumberOfPoints( at.GetNumberOfValues() / 3 );

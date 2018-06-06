@@ -20,7 +20,7 @@ namespace gdcm
 
 /**
  * \brief DirectoryHelper
- * this class is designed to help mitigate some of the commonly performed
+ * \details this class is designed to help mitigate some of the commonly performed
  * operations on directories.  namely:
  * 1) the ability to determine the number of series in a directory by what type
  * of series is present
@@ -74,7 +74,7 @@ public:
   static std::string GetFrameOfReference(const std::vector<DataSet>& inDS);
 
   //both the image and polydata readers use these functions to get std::strings
-  static std::string GetStringValueFromTag(const gdcm::Tag& t, const gdcm::DataSet& ds);
+  static std::string GetStringValueFromTag(const Tag& t, const DataSet& ds);
 };
 
 }

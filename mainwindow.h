@@ -53,10 +53,10 @@ public:
 
     void PopulateConnectionList();
     void scanDirIter(QDir dir);
-    void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID);
+    void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
     bool GetConnectionParms(QString &s, QString &u, QString &p);
     QString GetDicomModality(QString f);
-    bool AddFoundFile(QDirIterator *it, QString f, QString fType, QString modality, QString filePatientID);
+    bool AddFoundFile(QDirIterator *it, QString f, QString fType, QString modality, QString filePatientID, QString fileProtocol);
     QString GenerateRandomString(int len);
     void AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARREC);
     bool AnonymizeOneFileDumb(gdcm::Anonymizer &anon, const char *filename, const char *outfilename, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, bool continuemode = false);

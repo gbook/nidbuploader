@@ -29,7 +29,7 @@ bool ImageApplyLookupTable::Apply()
     gdcmDebugMacro( "Image is not palettized" );
     return false;
     }
-  const gdcm::LookupTable &lut = image.GetLUT();
+  const LookupTable &lut = image.GetLUT();
   int bitsample = lut.GetBitSample();
   if( !bitsample ) return false;
 
@@ -63,7 +63,7 @@ bool ImageApplyLookupTable::Apply()
   Output->SetPhotometricInterpretation( PhotometricInterpretation::RGB );
   Output->GetPixelFormat().SetSamplesPerPixel( 3 );
   Output->SetPlanarConfiguration( 0 ); // FIXME OT-PAL-8-face.dcm has a PlanarConfiguration while being PALETTE COLOR...
-  const gdcm::TransferSyntax &ts = image.GetTransferSyntax();
+  const TransferSyntax &ts = image.GetTransferSyntax();
   //assert( ts == TransferSyntax::RLELossless );
   if( ts.IsExplicit() )
     {
@@ -74,6 +74,27 @@ bool ImageApplyLookupTable::Apply()
     assert( ts.IsImplicit() );
     Output->SetTransferSyntax( TransferSyntax::ImplicitVRLittleEndian );
     }
+  // I do not have access to the DataSet:
+#if 0
+    {
+    // usual tags:
+    ds.Remove( Tag(0x0028, 0x1101) );
+    ds.Remove( Tag(0x0028, 0x1102) );
+    ds.Remove( Tag(0x0028, 0x1103) );
+
+    ds.Remove( Tag(0x0028, 0x1201) );
+    ds.Remove( Tag(0x0028, 0x1202) );
+    ds.Remove( Tag(0x0028, 0x1203) );
+
+    // Don't forget the segmented one:
+    ds.Remove( Tag(0x0028, 0x1221) );
+    ds.Remove( Tag(0x0028, 0x1222) );
+    ds.Remove( Tag(0x0028, 0x1223) );
+
+    // PaletteColorLookupTableUID ??
+    ds.Remove( Tag(0x0028, 0x1199) );
+    }
+#endif
 
 
   bool success = true;

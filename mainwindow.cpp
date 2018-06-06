@@ -274,7 +274,7 @@ void MainWindow::onGetReplyUpload()
 
             /* get the MD5(s) from the tableview and check if they were received */
             int ii = lastUploadList[i];
-            QString md5 = ui->tableFiles->item(ii,8)->text();
+            QString md5 = ui->tableFiles->item(ii,9)->text();
             WriteLog(QString("Checking if MD5 [%1] was received by remote server").arg(md5));
             bool found = false;
             if (md5list.contains(md5,Qt::CaseInsensitive)) {
@@ -397,6 +397,7 @@ void MainWindow::scanDirIter(QDir dir)
     QString fileModality;
     QString fileType;
     QString filePatientID;
+    QString fileProtocol;
 
     elapsedFileSearchTime.start();
     startFileSearchTime = QDateTime::currentDateTime();
@@ -411,18 +412,18 @@ void MainWindow::scanDirIter(QDir dir)
             fullfile = iterator.filePath();
             //WriteLog("Came across file [" + fullfile + "]...");
             /* check the file type */
-            GetFileType(fullfile, fileType, fileModality, filePatientID);
+            GetFileType(fullfile, fileType, fileModality, filePatientID, fileProtocol);
             if (fileType == "DICOM") {
                 //WriteLog("Filetype is DICOM");
                 // the modality can be DICOM if the user wants to search for all DICOM images, regardless of modality
                 if (modality == "DICOM") {
-                    AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
+                    AddFoundFile(&iterator,fullfile,fileType,fileModality,filePatientID,fileProtocol);
                     //WriteLog("Modality is DICOM");
                 }
                 else {
                     //WriteLog("Modality is not DICOM. Checking if modality [" + modality.toString() + "] equals fileModality [" + fileModality + "]");
                     if (modality == fileModality) {
-                        AddFoundFile(&iterator,fullfile,fileType,modality.toString(), filePatientID);
+                        AddFoundFile(&iterator,fullfile,fileType,modality.toString(), filePatientID,fileProtocol);
                         //WriteLog("Modality is same as fileModality");
                     }
                     else {
@@ -432,19 +433,19 @@ void MainWindow::scanDirIter(QDir dir)
             }
             else if ((fileType == "PARREC") && (modality == "PARREC")) {
                 //WriteLog("fileType and modality are PARREC");
-                AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
+                AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID,fileProtocol);
             }
             else if ((fileType == "EEG") && (modality == "EEG")) {
                 //WriteLog("fileType and modality are EEG");
-                AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
+                AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID,fileProtocol);
             }
             else if ((fileType == "ET") && (modality == "ET")) {
                 //WriteLog("fileType and modality are ET");
-                AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
+                AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID,fileProtocol);
             }
             else if ((fileType == "NIFTI") && (modality == "NIFTI")) {
                 //WriteLog("fileType and modality are Nifti");
-                AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID);
+                AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID,fileProtocol);
             }
             else {
                 WriteLog("fileType [" + fileType + "] and modality [" + modality.toString() + "] did not match");
@@ -457,9 +458,9 @@ void MainWindow::scanDirIter(QDir dir)
 /* ------------------------------------------------- */
 /* --------- GetFileType --------------------------- */
 /* ------------------------------------------------- */
-void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID)
+void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol)
 {
-    WriteLog("In GetFileType(" + f + ")");
+    //WriteLog("In GetFileType(" + f + ")");
     fileModality = QString("");
     gdcm::Reader r;
     r.SetFileName(f.toStdString().c_str());
@@ -478,9 +479,13 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
         /* get patientID */
         s = sf.ToString(gdcm::Tag(0x0010,0x0020));
         filePatientID = QString(s.c_str());
+
+        /* get protocol (seriesDesc) */
+        s = sf.ToString(gdcm::Tag(0x0008,0x103E));
+        fileProtocol = QString(s.c_str());
     }
     else {
-        WriteLog("[" + f + "] is not a DICOM file");
+        //WriteLog("[" + f + "] is not a DICOM file");
         /* check if EEG, and Polhemus */
         if ((f.toLower().endsWith(".cnt")) || (f.toLower().endsWith(".dat")) || (f.toLower().endsWith(".3dd")) || (f.toLower().endsWith(".eeg"))) {
             WriteLog("Found an EEG file [" + f + "]");
@@ -525,7 +530,11 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
                       QStringList parts = line.split(":",QString::SkipEmptyParts);
                       filePatientID = parts[1].trimmed();
                   }
-                  if (line.contains("MRSERIES")) {
+                  if (line.contains("Protocol name")) {
+                      QStringList parts = line.split(":",QString::SkipEmptyParts);
+                      fileProtocol = parts[1].trimmed();
+                  }
+                  if (line.toUpper().contains("MRSERIES")) {
                       fileModality = "MR";
                   }
                }
@@ -533,7 +542,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
             }
         }
         else {
-            WriteLog("Filetype is unknown [" + f + "]");
+            //WriteLog("Filetype is unknown [" + f + "]");
             fileType = "Unknown";
         }
     }
@@ -564,7 +573,7 @@ QString MainWindow::GetDicomModality(QString f)
 /* ------------------------------------------------- */
 /* --------- AddFoundFile -------------------------- */
 /* ------------------------------------------------- */
-bool MainWindow::AddFoundFile(QDirIterator *it, QString f, QString fType, QString modality, QString filePatientID)
+bool MainWindow::AddFoundFile(QDirIterator *it, QString f, QString fType, QString modality, QString filePatientID, QString fileProtocol)
 {
     qint64 size = 0;
     QString sSize, cDate;
@@ -597,12 +606,13 @@ bool MainWindow::AddFoundFile(QDirIterator *it, QString f, QString fType, QStrin
     ui->tableFiles->setItem(currentRow, 1, new QTableWidgetItem("Readable"));
     ui->tableFiles->setItem(currentRow, 2, new QTableWidgetItem(fType));
     ui->tableFiles->setItem(currentRow, 3, new QTableWidgetItem(modality));
-    ui->tableFiles->setItem(currentRow, 4, new QTableWidgetItem(filePatientID));
-    ui->tableFiles->setItem(currentRow, 5, new QTableWidgetItem(cDate));
-    ui->tableFiles->setItem(currentRow, 6, new QTableWidgetItem(sSize));
-    ui->tableFiles->setItem(currentRow, 7, new QTableWidgetItem(""));
+    ui->tableFiles->setItem(currentRow, 4, new QTableWidgetItem(fileProtocol));
+    ui->tableFiles->setItem(currentRow, 5, new QTableWidgetItem(filePatientID));
+    ui->tableFiles->setItem(currentRow, 6, new QTableWidgetItem(cDate));
+    ui->tableFiles->setItem(currentRow, 7, new QTableWidgetItem(sSize));
     ui->tableFiles->setItem(currentRow, 8, new QTableWidgetItem(""));
-    ui->tableFiles->setItem(currentRow, 9, new QTableWidgetItem(QString("%1").arg(size)));
+    ui->tableFiles->setItem(currentRow, 9, new QTableWidgetItem(""));
+    ui->tableFiles->setItem(currentRow, 10, new QTableWidgetItem(QString("%1").arg(size)));
 
     /* update the various statuses and metrics */
     numFilesFound++;
@@ -734,20 +744,20 @@ void MainWindow::DoUpload(bool uploadAll) {
 
         /* check if its status */
         QString status = ui->tableFiles->item(i,1)->text();
-        WriteLog("A");
+        //WriteLog("A");
         if (uploadAll || ( status.contains("error",Qt::CaseInsensitive) && !uploadAll ) ) {
-            WriteLog("B");
+            //WriteLog("B");
 
             /* add this item to the list */
             fileList.append(i);
-            currentUploadSize += ui->tableFiles->item(i,9)->text().toInt();
+            currentUploadSize += ui->tableFiles->item(i,10)->text().toInt();
 
             ui->lblStatus->setText("Preparing file...");
 
             int compareSize;
             if ((i+1) < rowCount) {
-                compareSize = currentUploadSize + ui->tableFiles->item(i+1,9)->text().toInt();
-                WriteLog("Total size so far... [" + QString::number(compareSize) + "] [" + ui->tableFiles->item(i+1,9)->text() + "]");
+                compareSize = currentUploadSize + ui->tableFiles->item(i+1,10)->text().toInt();
+                WriteLog("Total size so far... [" + QString::number(compareSize) + "] [" + ui->tableFiles->item(i+1,10)->text() + "]");
             }
             else {
                 compareSize = currentUploadSize;
@@ -761,9 +771,9 @@ void MainWindow::DoUpload(bool uploadAll) {
             }
 
             ui->progTotal->setValue(i+1);
-            WriteLog("Before qApp->processEvents()");
+            //WriteLog("Before qApp->processEvents()");
             qApp->processEvents();
-            WriteLog("After qApp->processEvents()");
+            //WriteLog("After qApp->processEvents()");
         }
 
         WriteLog(QString("in loop, done with row %1").arg(i));
@@ -929,12 +939,12 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
                 ui->tableFiles->setItem(ii,1,new QTableWidgetItem("Error anonymizing"));
             }
 
-            ui->tableFiles->setItem(ii,7,new QTableWidgetItem(newFilePath));
+            ui->tableFiles->setItem(ii,8,new QTableWidgetItem(newFilePath));
             /* get the MD5 hash after anonymization */
             if (ui->chkUseMD5->isChecked()) {
                 QByteArray md5 = GetFileChecksum(newFilePath,QCryptographicHash::Md5);
                 md5list << QString("%1").arg(md5.toStdString().c_str());
-                ui->tableFiles->setItem(ii,8,new QTableWidgetItem(QString("%1").arg(md5.toUpper().toStdString().c_str())));
+                ui->tableFiles->setItem(ii,9,new QTableWidgetItem(QString("%1").arg(md5.toUpper().toStdString().c_str())));
             }
             else {
                 md5list << "0";
@@ -954,13 +964,13 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
             /* add these filepaths to the list of files to be uploaded */
             uploadList << newPathPar;
             uploadList << newPathRec;
-            ui->tableFiles->setItem(ii,7,new QTableWidgetItem(newPathPar));
+            ui->tableFiles->setItem(ii,8,new QTableWidgetItem(newPathPar));
             if (ui->chkUseMD5->isChecked()) {
                 QByteArray md5_1 = GetFileChecksum(newPathPar,QCryptographicHash::Md5);
                 md5list << QString("%1").arg(md5_1.toStdString().c_str());
                 QByteArray md5_2 = GetFileChecksum(newPathRec,QCryptographicHash::Md5);
                 md5list << QString("%1").arg(md5_2.toStdString().c_str());
-                ui->tableFiles->setItem(ii,8,new QTableWidgetItem(QString("%1,%2").arg(md5_1.toUpper().toStdString().c_str()).arg(md5_2.toUpper().toStdString().c_str())));
+                ui->tableFiles->setItem(ii,9,new QTableWidgetItem(QString("%1,%2").arg(md5_1.toUpper().toStdString().c_str()).arg(md5_2.toUpper().toStdString().c_str())));
             }
             else {
                 md5list << "0";
@@ -970,11 +980,11 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
             newFilePath = f;
             /* add this filepath to the list of files to be uploaded */
             uploadList << newFilePath;
-            ui->tableFiles->setItem(ii,7,new QTableWidgetItem(newFilePath));
+            ui->tableFiles->setItem(ii,8,new QTableWidgetItem(newFilePath));
             if (ui->chkUseMD5->isChecked()) {
                 QByteArray md5 = GetFileChecksum(newFilePath,QCryptographicHash::Md5);
                 md5list << QString("%1").arg(md5.toStdString().c_str());;
-                ui->tableFiles->setItem(ii,8,new QTableWidgetItem(QString("%1").arg(md5.toUpper().toStdString().c_str())));
+                ui->tableFiles->setItem(ii,9,new QTableWidgetItem(QString("%1").arg(md5.toUpper().toStdString().c_str())));
             }
             else {
                 md5list << "0";
@@ -1935,7 +1945,7 @@ QNetworkProxy MainWindow::GetProxy()
 
 
 /* ------------------------------------------------- */
-/* --------- WriteLog ------------------------------ */
+/* --------- GetFileChecksum ----------------------- */
 /* ------------------------------------------------- */
 QByteArray MainWindow::GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm)
 {

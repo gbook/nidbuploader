@@ -41,6 +41,13 @@ namespace gdcm
 #define BUFSIZ 4096
 #endif
 
+#ifndef XMLCALL
+#define XMLCALL
+#endif
+#ifndef XML_STATUS_ERROR
+#define XML_STATUS_ERROR 0
+#endif
+
 static void XMLCALL startElement(void *userData, const char *name, const char **atts)
 {
   TableReader *tr = reinterpret_cast<TableReader*>(userData);
@@ -379,6 +386,18 @@ void TableReader::StartElement(const char *name, const char **atts)
     {
     // TODO !
     }
+  else if ( strcmp(name,"retired-standard-sop-classes") == 0 )
+    {
+    // TODO !
+    }
+  else if ( strcmp(name,"modality-specific-sop-class-conversions") == 0 )
+    {
+    // TODO !
+    }
+  else if ( strcmp(name,"standard-sop-classes2") == 0 )
+    {
+    // TODO !
+    }
   else
     {
     assert(0);
@@ -498,6 +517,18 @@ void TableReader::EndElement(const char *name)
     // TODO !
     }
   else if( strcmp(name, "sop-classes" ) == 0 )
+    {
+    // TODO !
+    }
+  else if ( strcmp(name,"retired-standard-sop-classes") == 0 )
+    {
+    // TODO !
+    }
+  else if ( strcmp(name,"modality-specific-sop-class-conversions") == 0 )
+    {
+    // TODO !
+    }
+  else if ( strcmp(name,"standard-sop-classes2") == 0 )
     {
     // TODO !
     }

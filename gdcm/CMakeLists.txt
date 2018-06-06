@@ -1,11 +1,22 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 2.8.7)
+if(POLICY CMP0022)
+  cmake_policy(SET CMP0022 NEW)
+endif()
 if(POLICY CMP0025)
   cmake_policy(SET CMP0025 NEW)
+endif()
+if(POLICY CMP0026)
+  cmake_policy(SET CMP0026 NEW)
 endif()
 if(POLICY CMP0042)
   cmake_policy(SET CMP0042 NEW)
 endif()
+if( POLICY CMP0063 )
+  cmake_policy(SET CMP0063 NEW)
+endif()
 project(GDCM)
+set(CMAKE_CXX_STANDARD 98)
+set(CMAKE_CXX_EXTENSIONS OFF)
 mark_as_advanced(CMAKE_BACKWARDS_COMPATIBILITY CMAKE_BUILD_TYPE CMAKE_INSTALL_PREFIX)
 set(GDCM_CMAKE_DIR "${GDCM_SOURCE_DIR}/CMake" CACHE INTERNAL "")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${GDCM_CMAKE_DIR}")
@@ -26,20 +37,10 @@ set(GDCM_PACKAGE_CONTACT "GDCM Developers <gdcm-developers@lists.sourceforge.net
 # See the CVS version of files in VTK/GUISupport/MFC for details. Or grep the
 # VTK source tree for "DELAYLOAD"
 
-#-----------------------------------------------------------------------------
-# Disallow insource build since I never test that
-string(COMPARE EQUAL "${GDCM_SOURCE_DIR}" "${GDCM_BINARY_DIR}" INSOURCE)
-get_filename_component(PARENTDIR ${GDCM_BINARY_DIR} PATH)
-string(COMPARE EQUAL "${GDCM_SOURCE_DIR}" "${PARENTDIR}" INSOURCESUBDIR)
-if(INSOURCE OR INSOURCESUBDIR)
-  message(FATAL_ERROR "GDCM requires an out of source Build. "
-    "Please create a separate binary directory and run CMake there.")
-endif()
-
 #----------------------------------------------------------------------------
 set(GDCM_MAJOR_VERSION 2)
-set(GDCM_MINOR_VERSION 4)
-set(GDCM_BUILD_VERSION 2)
+set(GDCM_MINOR_VERSION 8)
+set(GDCM_BUILD_VERSION 4)
 set(GDCM_VERSION
   "${GDCM_MAJOR_VERSION}.${GDCM_MINOR_VERSION}.${GDCM_BUILD_VERSION}")
 # let advanced user the option to define GDCM_API_VERSION:
@@ -141,6 +142,7 @@ if(GDCM_STANDALONE)
   find_path(GDCM_DATA_ROOT test.acr
     ${GDCM_SOURCE_DIR}/Testing/Data
     $ENV{GDCM_DATA_ROOT}
+    NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
     )
   mark_as_advanced(GDCM_DATA_ROOT)
 # You can define a path where you extra the famous D. Clunie spacing dataset
@@ -161,6 +163,7 @@ if(GDCM_STANDALONE)
     ${GDCM_SOURCE_DIR}/../gdcmDataExtra
     $ENV{GDCM_DATA_EXTRA_ROOT}
     $ENV{PUB_DICT_PATH}/../../gdcmDataExtra
+    NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
     )
   mark_as_advanced(GDCM_DATA_EXTRA_ROOT)
 endif()
@@ -194,7 +197,7 @@ endif()
 #-----------------------------------------------------------------------------
 # Build the main lib...
 if(NOT GDCM_HAVE_STDINT_H)
-  if(MSVC)
+  if( MSVC OR "x${CMAKE_CXX_COMPILER_ID}x" MATCHES "Intel" )
     include_directories(
       "${GDCM_SOURCE_DIR}/Utilities/C99"
       )
@@ -329,7 +332,7 @@ option(GDCM_USE_SYSTEM_PAPYRUS3 "Use system papyrus3" OFF)
 option(GDCM_USE_SYSTEM_SOCKETXX "Use system socket++" OFF)
 option(GDCM_USE_SYSTEM_LJPEG "Use system ljpeg (ijg lib)" OFF)
 option(GDCM_USE_SYSTEM_OPENJPEG "Use system openjpeg" OFF)
-option(GDCM_USE_SYSTEM_CHARLS "Use system charls" OFF)
+option(GDCM_USE_SYSTEM_CHARLS "Use system CharLS" OFF)
 mark_as_advanced(
   GDCM_USE_SYSTEM_ZLIB
   GDCM_USE_SYSTEM_OPENSSL
@@ -369,15 +372,10 @@ else()
 endif()
 
 if(GDCM_USE_SYSTEM_OPENJPEG)
-  # For some reason I cannot specify the version I want.
-  # find_package(OpenJPEG 2.0 REQUIRED)
-  # oh well we should handle both 1.0 and 2.0 anyway...
-  find_package(OpenJPEG REQUIRED)
+  find_package(OpenJPEG 2.0.0 REQUIRED)
   set(GDCM_OPENJPEG_LIBRARIES ${OPENJPEG_LIBRARIES})
 else()
-  set(GDCM_OPENJPEG_LIBRARIES gdcmopenjpeg)
-  option(GDCM_USE_OPENJPEG_V2 "Use openjpeg v2 version (advanced users only)." OFF)
-  mark_as_advanced(GDCM_USE_OPENJPEG_V2)
+  set(GDCM_OPENJPEG_LIBRARIES gdcmopenjp2)
 endif()
 
 # Very advanced user option:
@@ -414,6 +412,7 @@ endif()
 if(GDCM_USE_SYSTEM_ZLIB)
   # If user say so, then this is a requirement !
   find_package(ZLIB REQUIRED)
+  include_directories(${ZLIB_INCLUDE_DIR})
   set(GDCM_ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
 else()
   set(GDCM_ZLIB_LIBRARIES "gdcmzlib")
@@ -523,14 +522,40 @@ if(GDCM_STANDALONE)
   option(GDCM_WRAP_PHP "build php wrapping" OFF)
   option(GDCM_WRAP_JAVA "build java wrapping" OFF)
   option(GDCM_WRAP_CSHARP "build csharp wrapping" OFF)
+  mark_as_advanced(GDCM_WRAP_PHP)
   mark_as_advanced(GDCM_WRAP_PERL)
-  mark_as_advanced(GDCM_USE_RLE)
   mark_as_advanced(GDCM_USE_ACTIVIZ)
   option(GDCM_USE_JPEGLS "Build GDCM with JPEG-LS support" ON)
   mark_as_advanced(GDCM_USE_JPEGLS)
+  if(NOT DEFINED GDCM_DEFAULT_JAVA_VERSION)
+    # override with cmake -DGDCM_DEFAULT_JAVA_VERSION:STRING=1.5 if you dare
+    set(GDCM_DEFAULT_JAVA_VERSION 1.7)
+  endif()
+  if(GDCM_WRAP_JAVA)
+    set(GDCM_JAVA_SOURCE_VERSION "${GDCM_DEFAULT_JAVA_VERSION}" CACHE STRING "javac source version")
+    set(GDCM_JAVA_TARGET_VERSION "${GDCM_DEFAULT_JAVA_VERSION}" CACHE STRING "javac target version")
+    mark_as_advanced(GDCM_JAVA_SOURCE_VERSION GDCM_JAVA_TARGET_VERSION)
+  endif()
   if(GDCM_WRAP_CSHARP)
     find_package(CSharp REQUIRED)
     include(${CSharp_USE_FILE})
+  endif()
+  # Expose a way to pass -fPIC to static libs of gdcm core, while still build wrapped language as shared lib:
+  if(NOT DEFINED GDCM_USE_PIC_FOR_STATIC_LIBS)
+    if(GDCM_WRAP_JAVA)
+      if(NOT BUILD_SHARED_LIBS)
+        if(CMAKE_COMPILER_IS_GNUCXX)
+          set(GDCM_USE_PIC_FOR_STATIC_LIBS ON)
+        endif()
+      endif()
+    endif()
+  endif()
+  if(GDCM_USE_PIC_FOR_STATIC_LIBS)
+    if(BUILD_SHARED_LIBS)
+      message(FATAL_ERROR "Invalid configuration for static/shared lib")
+    else()
+      set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    endif()
   endif()
 endif()
 
@@ -540,7 +565,10 @@ set(GDCM_EXECUTABLE_DIR ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR})
 #-----------------------------------------------------------------------------
 # we need to link against CoreFoundation so that we can use CFBundle to get the executable path.
 if(APPLE)
-  find_library(COREFOUNDATION_LIBRARY CoreFoundation )
+  option(GDCM_USE_COREFOUNDATION_LIBRARY "Use COREFOUNDATION_LIBRARY?" ON)
+  if(GDCM_USE_COREFOUNDATION_LIBRARY)
+    find_library(COREFOUNDATION_LIBRARY CoreFoundation )
+  endif()
 endif()
 
 #-----------------------------------------------------------------------------
@@ -553,6 +581,16 @@ if(WIN32)
   mark_as_advanced(GDCM_DEBUG_POSTFIX)
 endif()
 #-----------------------------------------------------------------------------
+
+# Add a target so that the documentation can be build from the
+# root dir
+if(GDCM_DOCUMENTATION)
+  if(NOT DEFINED GDCM_SKIP_DOXYGENDOC_ALL_RULE)
+    add_custom_target(DoxygenDoc ALL)
+  else()
+    add_custom_target(DoxygenDoc)
+  endif()
+endif()
 
 # Need to subdirs in Source/Common before Wrapping
 # to have gdcmConfigure.h around
@@ -639,15 +677,10 @@ if(GDCM_STANDALONE)
     # needed here so that we have VTK_WRAP_PYTHON and al. available
     find_package(VTK REQUIRED)
     mark_as_advanced(VTK_DIR)
+    set(GDCM_VTK_DIR ${VTK_DIR})
     mark_as_advanced(GDCM_USE_PARAVIEW)
     subdirs(Utilities/VTK)
   endif()
-endif()
-#-----------------------------------------------------------------------------
-option(GDCM_USE_WXWIDGETS "wxWidgets bridge ?" OFF)
-mark_as_advanced(GDCM_USE_WXWIDGETS)
-if(GDCM_USE_WXWIDGETS)
-  subdirs(Utilities/wxWidgets)
 endif()
 
 #-----------------------------------------------------------------------------

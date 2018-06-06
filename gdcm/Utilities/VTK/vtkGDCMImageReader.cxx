@@ -51,7 +51,7 @@
 
 #include <sstream>
 
-vtkCxxRevisionMacro(vtkGDCMImageReader, "$Revision: 1.1 $")
+//vtkCxxRevisionMacro(vtkGDCMImageReader, "$Revision: 1.1 $")
 vtkStandardNewMacro(vtkGDCMImageReader)
 
 static inline bool vtkGDCMImageReader_IsCharTypeSigned()
@@ -582,7 +582,7 @@ static gdcm::PixelFormat::ScalarType
 ComputePixelTypeFromFiles(const char *inputfilename, vtkStringArray *filenames,
   gdcm::Image const & imageref)
 {
-  gdcm::PixelFormat::ScalarType outputpt ;
+  gdcm::PixelFormat::ScalarType outputpt;
   outputpt = gdcm::PixelFormat::UNKNOWN;
   // there is a very subtle bug here. Let's imagine we have a collection of files
   // they can all have different Rescale Slope / Intercept. In this case we should:
@@ -682,7 +682,7 @@ int vtkGDCMImageReader::RequestInformationCompat()
     return 0;
     }
   // I do not think this is a good idea anyway to let the user decide
-  // wether or not she wants *not* to apply shift/scale...
+  // whether or not she wants *not* to apply shift/scale...
   if( !this->ApplyShiftScale )
   {
     vtkErrorMacro("ApplyShiftScale not compatible" );
@@ -794,7 +794,7 @@ int vtkGDCMImageReader::RequestInformationCompat()
 
     for(int i=0;i<6;++i)
       this->ImageOrientationPatient[i] = dircos[i];
-#if ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 2 )
+#if VTK_MAJOR_VERSION >= 6 || ( VTK_MAJOR_VERSION == 5 && VTK_MINOR_VERSION > 2 )
     this->MedicalImageProperties->SetDirectionCosine( this->ImageOrientationPatient );
 #endif
     }
@@ -909,8 +909,8 @@ int vtkGDCMImageReader::RequestInformationCompat()
     break;
   default:
     this->SetErrorCode(vtkErrorCode::FileFormatError);
-    vtkErrorMacro( "Do not support this Pixel Type: " << (int)pixeltype.GetScalarType()
-      << " with " << (int)outputpt  );
+    vtkErrorMacro( "Do not support this Pixel Type: " << pixeltype.GetScalarTypeAsString()
+      << " with " << gdcm::PixelFormat(outputpt).GetScalarTypeAsString()  );
     return 0;
     }
   this->NumberOfScalarComponents = pixeltype.GetSamplesPerPixel();

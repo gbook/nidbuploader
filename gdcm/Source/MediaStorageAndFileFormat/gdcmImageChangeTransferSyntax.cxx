@@ -150,14 +150,15 @@ bool ImageChangeTransferSyntax::TryJPEGCodec(const DataElement &pixelde, Bitmap 
   // that can be both lossy and lossless:
   if( ts.IsLossy() )
     {
-    assert( !ts.IsLossless() );
+    //assert( !ts.IsLossless() ); // I cannot do since since Try* functions are called with all TS, I could be receiving a JPEGLS TS...
     jpgcodec.SetLossless( false );
     }
 
   ImageCodec *codec = &jpgcodec;
-  if( UserCodec && UserCodec->CanCode( ts ) )
+  JPEGCodec *usercodec = dynamic_cast<JPEGCodec*>(UserCodec);
+  if( usercodec && usercodec->CanCode( ts ) )
     {
-    codec = UserCodec;
+    codec = usercodec;
     }
 
   if( codec->CanCode( ts ) )
@@ -172,6 +173,12 @@ bool ImageChangeTransferSyntax::TryJPEGCodec(const DataElement &pixelde, Bitmap 
     codec->SetPhotometricInterpretation( input.GetPhotometricInterpretation() );
     codec->SetPixelFormat( input.GetPixelFormat() );
     codec->SetNeedOverlayCleanup( input.AreOverlaysInPixelData() );
+    // let's check we are not trying to compress 16bits with JPEG/Lossy/8bits
+    if( !input.GetPixelFormat().IsCompatible( ts ) )
+      {
+      gdcmErrorMacro("Pixel Format incompatible with TS" );
+      return false;
+      }
     DataElement out;
     //bool r = codec.Code(input.GetDataElement(), out);
     bool r = codec->Code(pixelde, out);
@@ -205,7 +212,7 @@ bool ImageChangeTransferSyntax::TryJPEGCodec(const DataElement &pixelde, Bitmap 
     if ( !output.GetPhotometricInterpretation().IsSameColorSpace( codec->GetPhotometricInterpretation() ) )
       {
       // HACK
-      //gdcm::Image *i = (gdcm::Image*)this;
+      //Image *i = (Image*)this;
       //i->SetPhotometricInterpretation( codec.GetPhotometricInterpretation() );
       assert(0);
       }
@@ -220,18 +227,25 @@ bool ImageChangeTransferSyntax::TryJPEGLSCodec(const DataElement &pixelde, Bitma
   //assert( len == pixelde.GetByteValue()->GetLength() );
   const TransferSyntax &ts = GetTransferSyntax();
 
-  JPEGLSCodec codec;
-  if( codec.CanCode( ts ) )
+  JPEGLSCodec jlscodec;
+  ImageCodec *codec = &jlscodec;
+  JPEGLSCodec *usercodec = dynamic_cast<JPEGLSCodec*>(UserCodec);
+  if( usercodec && usercodec->CanCode( ts ) )
     {
-    codec.SetDimensions( input.GetDimensions() );
-    codec.SetPixelFormat( input.GetPixelFormat() );
+    codec = usercodec;
+    }
+
+  if( codec->CanCode( ts ) )
+    {
+    codec->SetDimensions( input.GetDimensions() );
+    codec->SetPixelFormat( input.GetPixelFormat() );
     //codec.SetNumberOfDimensions( input.GetNumberOfDimensions() );
-    codec.SetPlanarConfiguration( input.GetPlanarConfiguration() );
-    codec.SetPhotometricInterpretation( input.GetPhotometricInterpretation() );
-    codec.SetNeedOverlayCleanup( input.AreOverlaysInPixelData() );
+    codec->SetPlanarConfiguration( input.GetPlanarConfiguration() );
+    codec->SetPhotometricInterpretation( input.GetPhotometricInterpretation() );
+    codec->SetNeedOverlayCleanup( input.AreOverlaysInPixelData() );
     DataElement out;
     //bool r = codec.Code(input.GetDataElement(), out);
-    bool r = codec.Code(pixelde, out);
+    bool r = codec->Code(pixelde, out);
     if(!r) return false;
     output.SetPlanarConfiguration( 0 );
 
@@ -251,9 +265,10 @@ bool ImageChangeTransferSyntax::TryJPEG2000Codec(const DataElement &pixelde, Bit
 
   JPEG2000Codec j2kcodec;
   ImageCodec *codec = &j2kcodec;
-  if( UserCodec && UserCodec->CanCode( ts ) )
+  JPEG2000Codec *usercodec = dynamic_cast<JPEG2000Codec*>(UserCodec);
+  if( usercodec && usercodec->CanCode( ts ) )
     {
-    codec = UserCodec;
+    codec = usercodec;
     }
 
   if( codec->CanCode( ts ) )
@@ -328,7 +343,7 @@ bool ImageChangeTransferSyntax::Change()
     if( !Force ) return false;
     // When force option is set but no specific TransferSyntax has been set, only inspect the
     // encapsulated stream...
-    // See gdcm::ImageReader::Read
+    // See ImageReader::Read
     if( Input->GetTransferSyntax().IsEncapsulated() && Input->GetTransferSyntax() != TransferSyntax::RLELossless )
       {
       Output = Input;
@@ -359,8 +374,8 @@ bool ImageChangeTransferSyntax::Change()
     || Force )
     {
     // In memory decompression:
-    gdcm::DataElement pixeldata( gdcm::Tag(0x7fe0,0x0010) );
-    gdcm::ByteValue *bv0 = new gdcm::ByteValue();
+    DataElement pixeldata( Tag(0x7fe0,0x0010) );
+    ByteValue *bv0 = new ByteValue();
     uint32_t len0 = (uint32_t)Input->GetBufferLength();
     bv0->SetLength( len0 );
     bool b = Input->GetBuffer( (char*)bv0->GetPointer() );
@@ -385,7 +400,7 @@ bool ImageChangeTransferSyntax::Change()
       }
 
     // same goes for icon
-    gdcm::DataElement iconpixeldata( gdcm::Tag(0x7fe0,0x0010) );
+    DataElement iconpixeldata( Tag(0x7fe0,0x0010) );
     Bitmap &bitmap = *Input;
     if( Pixmap *pixmap = dynamic_cast<Pixmap*>( &bitmap ) )
       {
@@ -395,7 +410,7 @@ bool ImageChangeTransferSyntax::Change()
       if( !pixmap->GetIconImage().IsEmpty() )
         {
         // same goes for icon
-        gdcm::ByteValue *bv = new gdcm::ByteValue();
+        ByteValue *bv = new ByteValue();
         uint32_t len = (uint32_t)pixmap->GetIconImage().GetBufferLength();
         bv->SetLength( len );
         bool bb = pixmap->GetIconImage().GetBuffer( (char*)bv->GetPointer() );

@@ -74,7 +74,7 @@ std::vector<unsigned int> StreamImageReader::GetDimensionsValueForResolution( un
   DataSet &subds_L = itemL.GetNestedDataSet();
 
   const DataElement &brrL = subds_L.GetDataElement( Tag(0x0048,0x0202) );
-  Element<gdcm::VR::US,gdcm::VM::VM2> elL1;
+  Element<VR::US,VM::VM2> elL1;
   elL1.SetFromDataElement( brrL );
   extent[0] = elL1.GetValue(0);
   extent[1] = elL1.GetValue(1);
@@ -390,25 +390,25 @@ bool StreamImageReader::ReadImageInformation()
     {
     if( !ds_t.FindDataElement( Tag(0x0048,0x0200) ) )
       {
-      gdcmWarningMacro( "error occured in WSI File read" );
+      gdcmWarningMacro( "error occurred in WSI File read" );
       return false;
       }
 
     DataElement seq = ds_t.GetDataElement( Tag(0x0048,0x0200) );
     SmartPointer<SequenceOfItems> sqi = seq.GetValueAsSQ();
-    gdcm::SequenceOfItems::SizeType s = sqi->GetNumberOfItems();
+    SequenceOfItems::SizeType s = sqi->GetNumberOfItems();
 
     Item itemL = sqi->GetItem(1);
     DataSet &subds_L = itemL.GetNestedDataSet();
 
     if( !subds_L.FindDataElement( Tag(0x0008,0x1160) ) )
       {
-      gdcmWarningMacro( "Error occured during WSI File Read" );
+      gdcmWarningMacro( "Error occurred during WSI File Read" );
       return false;
       }
 
     DataElement rfnL = subds_L.GetDataElement( Tag(0x0008,0x1160) );
-    Element<gdcm::VR::IS,gdcm::VM::VM1> elL;
+    Element<VR::IS,VM::VM1> elL;
     elL.SetFromDataElement( rfnL );
 
     if( !subds_L.FindDataElement( Tag(0x0048,0x0202) ) )
@@ -418,7 +418,7 @@ bool StreamImageReader::ReadImageInformation()
       }
 
     DataElement brrL = subds_L.GetDataElement( Tag(0x0048,0x0202) );
-    Element<gdcm::VR::US,gdcm::VM::VM2> elL1;
+    Element<VR::US,VM::VM2> elL1;
     elL1.SetFromDataElement( brrL );
 
     Item itemH = sqi->GetItem(s);
@@ -426,12 +426,12 @@ bool StreamImageReader::ReadImageInformation()
 
     if( !subds_H.FindDataElement( Tag(0x0008,0x1160) ) )
       {
-      gdcmWarningMacro( "Error occured during WSI File Read" );
+      gdcmWarningMacro( "Error occurred during WSI File Read" );
       return false;
       }
 
     DataElement rfnH = subds_H.GetDataElement( Tag(0x0008,0x1160) );
-    Element<gdcm::VR::IS,gdcm::VM::VM1> elH;
+    Element<VR::IS,VM::VM1> elH;
     elH.SetFromDataElement( rfnH );
 
     if( !subds_H.FindDataElement( Tag(0x0048,0x0202) ) )
@@ -441,7 +441,7 @@ bool StreamImageReader::ReadImageInformation()
       }
 
     DataElement brrH = subds_H.GetDataElement( Tag(0x0048,0x0202) );
-    Element<gdcm::VR::US,gdcm::VM::VM2> elH1;
+    Element<VR::US,VM::VM2> elH1;
     elH1.SetFromDataElement( brrH );
     }
 

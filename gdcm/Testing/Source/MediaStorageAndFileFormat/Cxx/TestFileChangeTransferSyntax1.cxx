@@ -21,7 +21,7 @@
 #include "gdcmImageChangePlanarConfiguration.h"
 #include "gdcmByteSwap.h"
 
-int TestFileChangeTransferSyntax1Func(const char *filename, bool verbose = false)
+static int TestFileChangeTransferSyntax1Func(const char *filename, bool verbose = false)
 {
   using namespace gdcm;
   if( verbose )

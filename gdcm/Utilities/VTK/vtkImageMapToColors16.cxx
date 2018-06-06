@@ -37,7 +37,7 @@
 #include "vtkScalarsToColors.h"
 #include "vtkPointData.h"
 
-vtkCxxRevisionMacro(vtkImageMapToColors16, "$Revision: 1.30 $")
+//vtkCxxRevisionMacro(vtkImageMapToColors16, "$Revision: 1.30 $")
 vtkStandardNewMacro(vtkImageMapToColors16)
 vtkCxxSetObjectMacro(vtkImageMapToColors16,LookupTable,vtkScalarsToColors)
 
@@ -62,7 +62,12 @@ vtkImageMapToColors16::~vtkImageMapToColors16()
 }
 
 //----------------------------------------------------------------------------
-unsigned long vtkImageMapToColors16::GetMTime()
+#ifdef VTK_HAS_MTIME_TYPE
+vtkMTimeType
+#else
+unsigned long
+#endif
+vtkImageMapToColors16::GetMTime()
 {
   unsigned long t1, t2;
 

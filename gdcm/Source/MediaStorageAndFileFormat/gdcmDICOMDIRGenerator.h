@@ -28,7 +28,7 @@ class DICOMDIRGeneratorInternal;
 
 /**
  * \brief DICOMDIRGenerator class
- * This is a STD-GEN-CD DICOMDIR generator.
+ * \details This is a STD-GEN-CD DICOMDIR generator.
  * ref: PS 3.11-2008 Annex D (Normative) - General Purpose CD-R and DVD Interchange Profiles
  *
  * \note
@@ -50,7 +50,7 @@ class DICOMDIRGeneratorInternal;
  *
  * \bug:
  * There is a current limitation of not handling Referenced SOP Class UID /
- * Referenced SOP Instance UID simply because the gdcm::Scanner does not allow us
+ * Referenced SOP Instance UID simply because the Scanner does not allow us
  * See PS 3.11 / Table D.3-2 STD-GEN Additional DICOMDIR Keys
  */
 class GDCM_EXPORT DICOMDIRGenerator
@@ -103,7 +103,7 @@ private:
 
 /**
  * \example GenerateDICOMDIR.cs
- * This is a C# example on how to use gdcm::DICOMDIRGenerator
+ * This is a C# example on how to use DICOMDIRGenerator
  */
 
 } // end namespace gdcm

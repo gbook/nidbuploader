@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 2.8.7)
 
 if(NOT EXPAT_NAMESPACE)
   set(EXPAT_NAMESPACE "EXPAT")
@@ -46,4 +46,3 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/expat_mangle.h.in
 # for expat_config.h
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 subdirs(lib)
-

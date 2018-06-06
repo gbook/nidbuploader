@@ -79,7 +79,7 @@ DCM 113064 T2* Map
 DCM 113065 T2 Map
 DCM 113066 Time Course of Signal
 DCM 113067 Temperature encoded
-DCM 113068 Student¿s T-Test
+DCM 113068 Student's T-Test
 DCM 113069 Time To Peak map
 DCM 113070 Velocity encoded
 DCM 113071 Z-Score Map
@@ -104,7 +104,7 @@ namespace gdcm
 Annex D DICOM Controlled Terminology Definitions (Normative)
 This Annex specifies the meanings of codes defined in DICOM, either explicitly or by reference to another
 part of DICOM or an external reference document or standard.
-DICOM Code Definitions (Coding Scheme Designator ¿DCM¿ Coding Scheme Version ¿01¿)
+DICOM Code Definitions (Coding Scheme Designator 'DCM' Coding Scheme Version '01')
 */
 
 struct CodeDefinition
@@ -188,11 +188,13 @@ static const CodeDefinition PurposeOfReferencetoAlternateRepresentation[] = {
 class FileDerivationInternals
 {
 public:
-  FileDerivationInternals():References(),DerivationCodeSequenceCodeValue(0),PurposeOfReferenceCodeSequenceCodeValue(0),DerivationDescription() {}
+  FileDerivationInternals():References(),DerivationCodeSequenceCodeValue(0),PurposeOfReferenceCodeSequenceCodeValue(0),DerivationDescription(),
+    AppendDerivationHistory(false) {}
   std::vector< std::pair< std::string, std::string > > References;
   unsigned int DerivationCodeSequenceCodeValue;
   unsigned int PurposeOfReferenceCodeSequenceCodeValue;
   std::string DerivationDescription;
+  bool AppendDerivationHistory;
 };
 
 FileDerivation::FileDerivation():F(new File),Internals(new FileDerivationInternals)
@@ -234,17 +236,22 @@ void FileDerivation::SetPurposeOfReferenceCodeSequenceCodeValue(unsigned int cod
 
 bool FileDerivation::AddReference(const char *referencedsopclassuid, const char *referencedsopinstanceuid)
 {
-  if( !gdcm::UIDGenerator::IsValid(referencedsopclassuid) )
+  if( !UIDGenerator::IsValid(referencedsopclassuid) )
     {
     return false;
     }
-  if( !gdcm::UIDGenerator::IsValid(referencedsopinstanceuid) )
+  if( !UIDGenerator::IsValid(referencedsopinstanceuid) )
     {
     return false;
     }
   //
   Internals->References.push_back( std::make_pair( referencedsopclassuid, referencedsopinstanceuid) );
   return true;
+}
+
+void FileDerivation::SetAppendDerivationHistory(bool b)
+{
+    Internals->AppendDerivationHistory = b;
 }
 
 /*
@@ -268,16 +275,15 @@ bool FileDerivation::AddDerivationDescription()
     ds.Replace( at1.GetAsDataElement() );
     }
 
-// ADD_DERIV: should we append the derivation after any existing one ?
-// For compat reason: always override the existing one
-//#define ADD_DERIV
   const Tag sisq(0x8,0x9215);
   SmartPointer<SequenceOfItems> sqi;
   sqi = new SequenceOfItems;
-#ifdef ADD_DERIV
-  if( ds.FindDataElement( sisq ) )
-    sqi = ds.GetDataElement( sisq ).GetValueAsSQ();
-#endif
+  // should we append the derivation after any existing one ?
+  if( Internals->AppendDerivationHistory )
+    {
+    if( ds.FindDataElement( sisq ) )
+      sqi = ds.GetDataElement( sisq ).GetValueAsSQ();
+    }
   sqi->SetLengthToUndefined();
 
   Item item;
@@ -328,23 +334,19 @@ Derivation Description (0008,2111) or Derivation Code Sequence (0008,9215).
 bool FileDerivation::AddSourceImageSequence()
 {
   File &file = GetFile();
+  DataSet &ds = file.GetDataSet();
 
   const Tag sisq(0x8,0x2112);
   SmartPointer<SequenceOfItems> sqi;
   sqi = new SequenceOfItems;
-  DataElement de( sisq);
-  de.SetVR( VR::SQ );
-  de.SetValue( *sqi );
-  de.SetVLToUndefined();
 
-  DataSet &ds = file.GetDataSet();
-  ds.Insert( de );
-
-  //sqi = (SequenceOfItems*)ds.GetDataElement( sisq ).GetSequenceOfItems();
-  sqi = ds.GetDataElement( sisq ).GetValueAsSQ();
+  if( ds.FindDataElement( sisq ) )
+    {
+    sqi = ds.GetDataElement( sisq ).GetValueAsSQ();
+    }
   sqi->SetLengthToUndefined();
 
-  if( sqi->GetNumberOfItems() )
+  if( !Internals->AppendDerivationHistory && sqi->GetNumberOfItems() )
     {
     gdcmWarningMacro( "Do not support appending Referenced Image" );
     return false;
@@ -362,10 +364,10 @@ bool FileDerivation::AddSourceImageSequence()
     (0008,1155) UI [1.2.840.1136190195280574824680000700.3.0.1.19970424140438] #  58, 1 ReferencedSOPInstanceUID
      */
       {
-      gdcm::Attribute<0x8,0x1150> sopinstanceuid;
+      Attribute<0x8,0x1150> sopinstanceuid;
       sopinstanceuid.SetValue( it->first );
       subds.Replace( sopinstanceuid.GetAsDataElement() );
-      gdcm::Attribute<0x8,0x1155> sopclassuid;
+      Attribute<0x8,0x1155> sopclassuid;
       sopclassuid.SetValue( it->second );
       subds.Replace( sopclassuid.GetAsDataElement() );
       }
@@ -376,6 +378,11 @@ bool FileDerivation::AddSourceImageSequence()
     sqi->AddItem( item1 );
     }
 
+  DataElement de( sisq);
+  de.SetVR( VR::SQ );
+  de.SetValue( *sqi );
+  de.SetVLToUndefined();
+  ds.Replace( de );
 
   return true;
 }
@@ -456,12 +463,12 @@ bool FileDerivation::Derive()
   DataSet &ds = file.GetDataSet();
     {
     // (0008,0008) CS [ORIGINAL\SECONDARY]                     #  18, 2 ImageType
-    gdcm::Attribute<0x0008,0x0008> at3;
-    static const gdcm::CSComp values[] = {"DERIVED","SECONDARY"};
+    Attribute<0x0008,0x0008> at3;
+    static const CSComp values[] = {"DERIVED","SECONDARY"};
     at3.SetValues( values, 2, true ); // true => copy data !
     if( ds.FindDataElement( at3.GetTag() ) )
       {
-      const gdcm::DataElement &de = ds.GetDataElement( at3.GetTag() );
+      const DataElement &de = ds.GetDataElement( at3.GetTag() );
       if( !de.IsEmpty() )
         at3.SetFromDataElement( de );
       // Make sure that value #1 is at least 'DERIVED', so override in all cases:

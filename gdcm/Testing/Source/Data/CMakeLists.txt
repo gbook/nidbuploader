@@ -64,6 +64,15 @@ set(BLACK_LIST_READER
   MR-MONO2-12-angio-an1.acr
 # Openjpeg / Part 2:
   lena512_rot90.j2k.dcm
+# Remove this one for now:
+  LengthOfItemLarger.dcm
+# https://github.com/team-charls/charls/issues/16
+  JPEG_LS_InvalidEscapeSequence_COM_padding.dcm
+# MITRA_CORNELL
+  MITRA_CORNELL.dcm
+  EmptyIcon_Bug417.dcm
+  EnhancedWithIPPPerFrameIOPShared.dcm
+  FUJI-ffff-MONO1-J2K.dcm
 )
 if(NOT GDCM_USE_PVRG)
   set(BLACK_LIST_READER

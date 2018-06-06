@@ -24,7 +24,7 @@ class StreamImageWriter;
 class Pixmap;
 /**
  * \brief PixmapWriter
- * This class will takes two inputs:
+ * \details This class will takes two inputs:
  * 1. The DICOM DataSet
  * 2. The Image input
  * It will override any info from the Image over the DataSet.
@@ -55,14 +55,14 @@ public:
 
 protected:
   void DoIconImage(DataSet & ds, Pixmap const & image);
-  bool PrepareWrite();
+  bool PrepareWrite( MediaStorage const & refms );
 
   SmartPointer<Pixmap> PixelData;
 };
 
 /**
  * \example StandardizeFiles.cs
- * This is a C++ example on how to use gdcm::PixmapWriter
+ * This is a C++ example on how to use PixmapWriter
  */
 
 } // end namespace gdcm

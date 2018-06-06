@@ -33,6 +33,7 @@
 #include "gdcmSwapCode.h"
 #include "gdcmEvent.h"
 #include "gdcmProgressEvent.h"
+#include "gdcmFileNameEvent.h"
 #include "gdcmAnonymizeEvent.h"
 #include "gdcmDirectory.h"
 #ifdef GDCM_BUILD_TESTING
@@ -89,6 +90,7 @@
 #include "gdcmUUIDGenerator.h"
 //#include "gdcmConstCharWrapper.h"
 #include "gdcmScanner.h"
+#include "gdcmStrictScanner.h"
 #include "gdcmAttribute.h"
 #include "gdcmSubject.h"
 #include "gdcmCommand.h"
@@ -147,6 +149,7 @@
 #include "gdcmDecoder.h"
 #include "gdcmCodec.h"
 #include "gdcmImageCodec.h"
+#include "gdcmRLECodec.h"
 #include "gdcmJPEGCodec.h"
 #include "gdcmJPEGLSCodec.h"
 #include "gdcmJPEG2000Codec.h"
@@ -189,6 +192,7 @@
 #include "gdcmBoxRegion.h"
 #include "gdcmImageRegionReader.h"
 #include "gdcmJSON.h"
+#include "gdcmFileDecompressLookupTable.h"
 
 using namespace gdcm;
 %}
@@ -240,11 +244,78 @@ EXTEND_CLASS_PRINT_GENERAL(toString,classname)
 // Need to be located *after* gdcmConfigure.h
 #ifdef GDCM_AUTOLOAD_GDCMJNI
 %pragma(java) jniclasscode=%{
+private final static String GDCMJNI = "gdcmjni";
  static {
+   if( isFullJar() ) {
+     loadFromJar();
+   } else {
+     try {
+       // System.out.println(System.getProperty("java.library.path"));
+       System.loadLibrary(GDCMJNI);
+     } catch (UnsatisfiedLinkError e) {
+       System.err.println("Native code library failed to load. \n" + e);
+       System.exit(1);
+     }
+   }
+ }
+
+ // https://stackoverflow.com/questions/228477/how-do-i-programmatically-determine-operating-system-in-java
+ private static boolean isWindows() {
+ final String OS = System.getProperty("os.name").toLowerCase();
+     return (OS.indexOf("win") >= 0);
+ }
+ private static boolean isUnix() {
+ final String OS = System.getProperty("os.name").toLowerCase();
+     return (OS.indexOf("nux") >= 0);
+ }
+ private static String getLibName() {
+   if( isWindows() ) {
+   final String name = "/" + GDCMJNI + ".dll";
+   return name;
+   } else if( isUnix() ) {
+   final String name = "/lib" + GDCMJNI + ".so";
+   return name;
+   }
+   return null;
+ }
+
+ // https://stackoverflow.com/questions/1611357/how-to-make-a-jar-file-that-includes-dll-files
+ private static boolean isFullJar() {
+   final String name = getLibName();
+   final java.net.URL u = gdcmJNI.class.getResource(name);
+   if (u != null) {
+     return true;
+   }
+   return false;
+ }
+
+ private static void loadFromJar() {
+   final String path = "GDCM_" + new java.util.Date().getTime();
+   loadLib(path, GDCMJNI);
+ }
+
+/**
+ * Puts library to temp dir and loads to memory
+ */
+ private static void loadLib(String path, String name) {
+   name = getLibName();
    try {
-       System.loadLibrary("gdcmjni");
-   } catch (UnsatisfiedLinkError e) {
-     System.err.println("Native code library failed to load. \n" + e);
+     java.io.InputStream in = gdcmJNI.class.getResourceAsStream(name);
+     // always write to different location
+     java.io.File fileOut = new java.io.File(System.getProperty("java.io.tmpdir") + "/" + path + name);
+     // create intermediate directory:
+     fileOut.getParentFile().mkdirs();
+     byte[] buffer = new byte[1024];
+     int read = -1;
+     java.io.FileOutputStream fos = new java.io.FileOutputStream(fileOut);
+     while((read = in.read(buffer)) != -1) {
+       fos.write(buffer, 0, read);
+     }
+     in.close();
+     fos.close();
+     System.load(fileOut.getAbsolutePath());
+   } catch (Exception e) {
+     System.err.println("Jar code library failed to load. \n" + e);
      System.exit(1);
    }
  }
@@ -258,6 +329,15 @@ EXTEND_CLASS_PRINT_GENERAL(toString,classname)
 #define GDCM_EXPORT
 %include "gdcmLegacyMacro.h"
 
+// The following must be define early on as gdcmVL.h get included real early
+%rename(GetValueLength) gdcm::VL::operator uint32_t;
+//%csmethodmodifiers gdcm::VL::GetValueLength "private"
+//%csmethodmodifiers GetValueLength "private"
+//%rename(GetValue) VL::operator uint32_t ();
+//  public static implicit operator int( MyType a )
+//        {
+//            return a.value;
+//        }
 %include "gdcmSwapCode.h"
 
 //%feature("director") Event;
@@ -297,10 +377,40 @@ EXTEND_CLASS_PRINT(gdcm::PixelFormat)
 //%include "enumtypesafe.swg" // optional as typesafe enums are the default
 
 EXTEND_CLASS_PRINT(gdcm::MediaStorage)
-//%rename(__getitem__) gdcm::Tag::operator[];
-//%rename(this ) gdcm::Tag::operator[];
+%rename(equals) gdcm::Tag::operator==;
+//%typemap(javain, pgcppname="(Tag)$javainput") const gdcm::Tag& _val "$javaclassname.getCPtr((Tag)$javainput)"
+//%typemap(jstype) const gdcm::Tag& _val "java.lang.Object"
+%typemap(javacode) gdcm::Tag %{
+  @Override
+  public boolean equals(java.lang.Object obj) {
+    boolean equal = false;
+    if (obj instanceof $javaclassname)
+      equal = (($javaclassname)obj).equals(this);
+    return equal;
+  }
+%}
+%typemap(javainterfaces) gdcm::Tag "Comparable<Tag>";
 %include "gdcmTag.h"
 EXTEND_CLASS_PRINT(gdcm::Tag)
+%javamethodmodifiers gdcm::Tag::equals %{@Override
+  public%};
+%javamethodmodifiers gdcm::Tag::hashCode %{@Override
+  public%};
+%javamethodmodifiers gdcm::Tag::compareTo %{@Override
+  public%};
+%extend gdcm::Tag {
+  int hashCode() {
+    return (int)self->GetElementTag();
+  }
+  int compareTo(Tag t) {
+    if( *self == t ) return 0;
+    if( *self < t ) return -1;
+    return 1;
+  }
+};
+%typemap(javacode) gdcm::Tag;
+%typemap(javainterfaces) gdcm::Tag;
+
 %include "gdcmPrivateTag.h"
 EXTEND_CLASS_PRINT(gdcm::PrivateTag)
 
@@ -308,6 +418,12 @@ EXTEND_CLASS_PRINT(gdcm::PrivateTag)
 %extend gdcm::ProgressEvent {
   static ProgressEvent *Cast(Event *event) {
     return dynamic_cast<ProgressEvent*>(event);
+  }
+};
+%include "gdcmFileNameEvent.h"
+%extend gdcm::FileNameEvent {
+  static FileNameEvent *Cast(Event *event) {
+    return dynamic_cast<FileNameEvent*>(event);
   }
 };
 //%feature("director") AnonymizeEvent;
@@ -508,6 +624,8 @@ EXTEND_CLASS_PRINT(gdcm::Pixmap)
 EXTEND_CLASS_PRINT(gdcm::Image)
 %include "gdcmFragment.h"
 EXTEND_CLASS_PRINT(gdcm::Fragment)
+// convert SWIGTYPE_p_std__vectorT_gdcm__Fragment_t__size_type
+%template() std::vector< gdcm::Fragment >;
 %include "gdcmPDBElement.h"
 EXTEND_CLASS_PRINT(gdcm::PDBElement)
 %include "gdcmPDBHeader.h"
@@ -650,8 +768,17 @@ $1 = JNU_GetStringNativeChars(jenv, $input);
 %include "gdcmCommand.h"
 
 %template(SmartPtrScan) gdcm::SmartPointer<gdcm::Scanner>;
+%template (TagToValue) std::map<gdcm::Tag, const char*>;
+//%template (TagToValueType) std::map<gdcm::Tag, const char*>::value_type;
+%template (MappingType) std::map<const char*,gdcm::Scanner::TagToValue>;
 %include "gdcmScanner.h"
 EXTEND_CLASS_PRINT(gdcm::Scanner)
+%template(SmartPtrStrictScan) gdcm::SmartPointer<gdcm::StrictScanner>;
+%include "gdcmStrictScanner.h"
+EXTEND_CLASS_PRINT(gdcm::StrictScanner)
+%clear TagToValue;
+//%clear TagToValueType;
+%clear MappingType;
 
 %template(SmartPtrAno) gdcm::SmartPointer<gdcm::Anonymizer>;
 //%ignore gdcm::Anonymizer::Anonymizer;
@@ -776,6 +903,7 @@ EXTEND_CLASS_PRINT(gdcm::ModuleEntry)
 //%include "gdcmCodec.h"
 %feature("director") ImageCodec;
 %include "gdcmImageCodec.h"
+%include "gdcmRLECodec.h"
 %include "gdcmJPEGCodec.h"
 %include "gdcmJPEGLSCodec.h"
 %include "gdcmJPEG2000Codec.h"
@@ -852,3 +980,4 @@ EXTEND_CLASS_PRINT(gdcm::BoxRegion)
 //EXTEND_CLASS_PRINT(gdcm::ImageRegionReader)
 %clear signed char* inreadbuffer;
 %include "gdcmJSON.h"
+%include "gdcmFileDecompressLookupTable.h"

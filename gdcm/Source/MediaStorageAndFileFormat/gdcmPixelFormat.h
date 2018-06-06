@@ -22,9 +22,11 @@
 namespace gdcm
 {
 
+class TransferSyntax;
+
 /**
  * \brief PixelFormat
- * \note
+ * \details 
  * By default the Pixel Type will be instanciated with the following
  * parameters:
  * - SamplesPerPixel : 1
@@ -32,6 +34,13 @@ namespace gdcm
  * - BitsStored : 8
  * - HighBit : 7
  * - PixelRepresentation : 0
+ *
+ * Fundamentally PixelFormat is very close to what DICOM allows. It will be
+ * very hard to extend this class for the upcoming DICOM standard where
+ * Floating 32 and 64bits will be allowed.
+ *
+ * It is also very hard for this class to fully support 64bits integer type
+ * (see GetMin / GetMax signature restricted to 64bits signed).
  */
 class GDCM_EXPORT PixelFormat
 {
@@ -48,6 +57,8 @@ public:
     INT16,
     UINT32,  // For some DICOM files (RT or SC)
     INT32,   //                        "   "
+    UINT64,  // Needed when input is 32bits + intercept/slope (incomplete support)
+    INT64,   //                        "   "
     FLOAT16, // sure why not...
     FLOAT32, // good ol' 'float'
     FLOAT64, // aka 'double'
@@ -92,6 +103,15 @@ public:
     {
     if( ba )
       {
+      switch( ba )
+        {
+        /* some devices (FUJIFILM CR + MONO1) incorrectly set BitsAllocated/BitsStored
+         * as bitmask instead of value. Do what they mean instead of what they say.
+         */
+        case 0xffff: ba = 16; break;
+        case 0x0fff: ba = 12; break;
+        case 0x00ff: ba =  8; break;
+        }
       BitsAllocated = ba;
       BitsStored = ba;
       HighBit = (unsigned short)(ba - 1);
@@ -111,6 +131,14 @@ public:
     }
   void SetBitsStored(unsigned short bs)
     {
+    switch( bs )
+      {
+      /* see SetBitsAllocated for explanation
+       */
+      case 0xffff: bs = 16; break;
+      case 0x0fff: bs = 12; break;
+      case 0x00ff: bs =  8; break;
+      }
     if( bs <= BitsAllocated && bs )
       {
       BitsStored = bs;
@@ -126,6 +154,15 @@ public:
     }
   void SetHighBit(unsigned short hb)
     {
+    switch( hb )
+      {
+      /* broken implementations that use bitmask for BitsAllocated/Stored
+       * nonetheless use (BitsStored-1) for HighBit. correct for this here.
+       */
+      case 0xfffe: hb = 15; break;
+      case 0x0ffe: hb = 11; break;
+      case 0x00fe: hb =  7; break;
+      }
     if( hb < BitsStored )
       HighBit = hb;
     }
@@ -194,6 +231,7 @@ public:
       PixelRepresentation != pf.PixelRepresentation;
     }
 
+  bool IsCompatible(const TransferSyntax & ts ) const;
 protected:
   /// When image with 24/24/23 was read, need to validate
   bool Validate();
