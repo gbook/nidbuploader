@@ -18,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
     WriteLog("Entering MainWindow()");
     ui->setupUi(this);
     this->showMaximized();
-    qsrand(QTime::currentTime().msec());
+    qsrand(static_cast<uint>(QTime::currentTime().msec()));
 
     numNetConn = 0;
 
@@ -204,7 +204,7 @@ void MainWindow::onGetReply()
     if (reply) {
         /* and check if there was an error along with the reply */
         if (reply->error() == QNetworkReply::NoError) {
-            const int available = reply->bytesAvailable();
+            qint64 available = reply->bytesAvailable();
             if (available > 0) {
                 const QByteArray buffer(reply->readAll());
                 response = QString::fromUtf8(buffer);
@@ -248,7 +248,7 @@ void MainWindow::onGetReplyUpload()
     QString response;
     if (reply) {
         if (reply->error() == QNetworkReply::NoError) {
-            const int available = reply->bytesAvailable();
+            qint64 available = reply->bytesAvailable();
             if (available > 0) {
                 const QByteArray buffer(reply->readAll());
                 response = QString::fromUtf8(buffer);
@@ -448,7 +448,7 @@ void MainWindow::scanDirIter(QDir dir)
                 AddFoundFile(&iterator,fullfile,fileType,fileModality, filePatientID,fileProtocol);
             }
             else {
-                WriteLog("fileType [" + fileType + "] and modality [" + modality.toString() + "] did not match");
+                WriteLog("File [" + fullfile + "]fileType [" + fileType + "] and modality [" + modality.toString() + "] did not match");
             }
         }
     }
@@ -488,7 +488,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
         //WriteLog("[" + f + "] is not a DICOM file");
         /* check if EEG, and Polhemus */
         if ((f.toLower().endsWith(".cnt")) || (f.toLower().endsWith(".dat")) || (f.toLower().endsWith(".3dd")) || (f.toLower().endsWith(".eeg"))) {
-            WriteLog("Found an EEG file [" + f + "]");
+            //WriteLog("Found an EEG file [" + f + "]");
             fileType = "EEG";
             fileModality = "EEG";
             QFileInfo fn = QFileInfo(f);
@@ -497,7 +497,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
         }
         /* check if ET */
         else if (f.toLower().endsWith(".edf")) {
-            WriteLog("Found an ET file [" + f + "]");
+            //WriteLog("Found an ET file [" + f + "]");
             fileType = "ET";
             fileModality = "ET";
             QFileInfo fn = QFileInfo(f);
@@ -506,7 +506,7 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
         }
         /* check if MR (Non-DICOM) analyze or nifti */
         else if ((f.toLower().endsWith(".nii")) || (f.toLower().endsWith(".nii.gz")) || (f.toLower().endsWith(".hdr")) || (f.toLower().endsWith(".img"))) {
-            WriteLog("Found an analyze or Nifti image [" + f + "]");
+            //WriteLog("Found an analyze or Nifti image [" + f + "]");
             fileType = "NIFTI";
             fileModality = "NIFTI";
             QFileInfo fn = QFileInfo(f);
@@ -597,7 +597,7 @@ bool MainWindow::AddFoundFile(QDirIterator *it, QString f, QString fType, QStrin
     info = it->fileInfo();
     size += info.size();
     cDate = info.created().toString();
-    sSize = humanReadableSize(size);
+    sSize = humanReadableSize(static_cast<quint64>(size));
 
     /* add a row to the table and populate it with info */
     const int currentRow = ui->tableFiles->rowCount();
@@ -618,7 +618,7 @@ bool MainWindow::AddFoundFile(QDirIterator *it, QString f, QString fType, QStrin
     numFilesFound++;
     numBytesFound += size;
     ui->lblFileCount->setText(QString("Found %1 files").arg(ui->tableFiles->rowCount()));
-    ui->lblFileBytesFound->setText(humanReadableSize(numBytesFound));
+    ui->lblFileBytesFound->setText(humanReadableSize(static_cast<quint64>(numBytesFound)));
     ui->lblNumFilesFound->setText(QString("%1").arg(numFilesFound));
     ui->lblFileElapsedTime->setText(QString("%1").arg(timeConversion(elapsedFileSearchTime.elapsed())));
 
@@ -627,7 +627,7 @@ bool MainWindow::AddFoundFile(QDirIterator *it, QString f, QString fType, QStrin
         QString filebasename = QFileInfo(f).baseName();
         QStringList parts = filebasename.split("_");
 
-        WriteLog(QString("FileBaseName: %1 Number of parts: %2").arg(filebasename, parts.count()));
+        WriteLog(QString("File [" + f + "] added to list. FileBaseName: %1 Number of parts: %2").arg(filebasename, parts.count()));
 
         if ((parts.count() != 5) && (parts.count() != 6)) {
             /* color the line red */
@@ -1263,7 +1263,7 @@ void MainWindow::progressChanged(qint64 a, qint64 b)
 {
     if (b > 0) {
         //qDebug() << "Uploading " << a  << "/" << b << "%" << (double)a/(double)b*100.0;
-        ui->progUpload->setValue(((double)a/(double)b)*100.0);
+        ui->progUpload->setValue(static_cast<int>(static_cast<double>((static_cast<double>(a)/static_cast<double>(b))*100.0)));
         //qApp->processEvents(); // for some reason when this is uncommented, the upload freezes
     }
 
@@ -1336,7 +1336,7 @@ void MainWindow::on_chkRemovePatientBirthDate_clicked() { SetTempDir(); }
 /* ------------------------------------------------- */
 void MainWindow::on_lstConn_clicked(const QModelIndex &index)
 {
-    index;
+    //index;
     ui->lblConnMessage->setText("");
 }
 
@@ -1527,7 +1527,7 @@ void MainWindow::onGetReplyInstanceList()
     QString response;
     if (reply) {
         if (reply->error() == QNetworkReply::NoError) {
-            const int available = reply->bytesAvailable();
+            qint64 available = reply->bytesAvailable();
             if (available > 0) {
                 const QByteArray buffer(reply->readAll());
                 response = QString::fromUtf8(buffer);
@@ -1567,7 +1567,7 @@ void MainWindow::onGetReplyProjectList()
     QString response;
     if (reply) {
         if (reply->error() == QNetworkReply::NoError) {
-            const int available = reply->bytesAvailable();
+            qint64 available = reply->bytesAvailable();
             if (available > 0) {
                 const QByteArray buffer(reply->readAll());
                 response = QString::fromUtf8(buffer);
@@ -1608,7 +1608,7 @@ void MainWindow::onGetReplySiteList()
     QString response;
     if (reply) {
         if (reply->error() == QNetworkReply::NoError) {
-            const int available = reply->bytesAvailable();
+            qint64 available = reply->bytesAvailable();
             if (available > 0) {
                 const QByteArray buffer(reply->readAll());
                 response = QString::fromUtf8(buffer);
@@ -1650,7 +1650,7 @@ void MainWindow::onGetReplyEquipmentList()
     QString response;
     if (reply) {
         if (reply->error() == QNetworkReply::NoError) {
-            const int available = reply->bytesAvailable();
+            qint64 available = reply->bytesAvailable();
             if (available > 0) {
                 const QByteArray buffer(reply->readAll());
                 response = QString::fromUtf8(buffer);
@@ -1737,7 +1737,7 @@ void MainWindow::onGetReplyStartTransaction()
     QString response;
     if (reply) {
         if (reply->error() == QNetworkReply::NoError) {
-            const int available = reply->bytesAvailable();
+            qint64 available = reply->bytesAvailable();
             if (available > 0) {
                 const QByteArray buffer(reply->readAll());
                 response = QString::fromUtf8(buffer);
@@ -1814,7 +1814,7 @@ void MainWindow::onGetReplyEndTransaction()
     QString response;
     if (reply) {
         if (reply->error() == QNetworkReply::NoError) {
-            const int available = reply->bytesAvailable();
+            qint64 available = reply->bytesAvailable();
             if (available > 0) {
                 const QByteArray buffer(reply->readAll());
                 response = QString::fromUtf8(buffer);
@@ -1836,7 +1836,7 @@ void MainWindow::onGetReplyEndTransaction()
 /* ------------------------------------------------- */
 void MainWindow::on_cmbInstanceID_currentIndexChanged(int index)
 {
-    index;
+    //index;
     on_btnLoadProjectIDs_clicked();
 }
 
@@ -1933,7 +1933,7 @@ QNetworkProxy MainWindow::GetProxy()
         if (proxyType == "ftpcaching") { proxy.setType(QNetworkProxy::FtpCachingProxy); }
 
         proxy.setHostName(ui->proxyHostname->text());
-        proxy.setPort(ui->proxyPort->value());
+        proxy.setPort(static_cast<quint16>(ui->proxyPort->value()));
         proxy.setUser(ui->proxyUsername->text());
         proxy.setPassword(ui->proxyPassword->text());
     }
