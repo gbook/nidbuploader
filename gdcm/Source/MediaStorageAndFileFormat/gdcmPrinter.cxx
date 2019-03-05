@@ -197,7 +197,7 @@ void Printer::PrintElement(std::ostream& os, const ImplicitDataElement &ide, Dic
   case VM::rep: \
     {Element<VR::type, VM::rep> e; \
     /*assert( VM::rep == VM::VM1_n );*/ \
-    e.SetArray( (VRToType<VR::type>::Type *)array, length, true ); \
+    e.SetArray( (const VRToType<VR::type>::Type *)array, length, true ); \
     e.Print( os ); }\
     break;
 #define PrinterTemplateSubCase(type,rep) \
@@ -600,6 +600,7 @@ VR Printer::PrintDataElement(std::ostringstream &os, const Dicts &dicts, const D
       StringFilterCase(FL);
       StringFilterCase(FD);
       //StringFilterCase(OB);
+      StringFilterCase(OD);
       StringFilterCase(OF);
       //StringFilterCase(OW);
       StringFilterCase(SL);
@@ -764,7 +765,7 @@ VR Printer::PrintDataElement(std::ostringstream &os, const Dicts &dicts, const D
     {
     assert( refvr != VR::INVALID );
     assert( refvr & VR::VRBINARY );
-    if( refvr & VR::OB_OW || refvr == VR::SQ )
+    if( refvr & VR::OB_OW || refvr == VR::OD || refvr == VR::OF || refvr == VR::SQ )
       {
       guessvm = VM::VM1;
       }

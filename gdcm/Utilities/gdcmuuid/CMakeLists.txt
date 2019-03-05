@@ -9,6 +9,15 @@ string(TOLOWER ${UUID_NAMESPACE} UUID_LIBRARY_NAME)
 
 project(${UUID_NAMESPACE} C)
 
+foreach(p
+    CMP0042
+    CMP0063
+    )
+  if(POLICY ${p})
+    cmake_policy(SET ${p} NEW)
+  endif()
+endforeach()
+
 # Do full dependency headers.
 include_regular_expression("^.*$")
 

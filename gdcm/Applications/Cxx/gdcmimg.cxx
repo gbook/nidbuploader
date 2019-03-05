@@ -70,8 +70,12 @@
 #include <getopt.h>
 #include <string.h>
 
+#ifndef GDCM_HAVE_ATOLL
 #ifdef _MSC_VER
 #define atoll _atoi64
+#else
+#define atoll atol
+#endif
 #endif
 
 static unsigned int readsize(const char *str, unsigned int * size)
@@ -858,7 +862,8 @@ int main (int argc, char *argv[])
       || gdcm::System::StrCaseCmp(inputextension,".rawl") == 0  // kakadu convention for raw little endian
       || gdcm::System::StrCaseCmp(inputextension,".gray") == 0  // imagemagick convention
       || gdcm::System::StrCaseCmp(inputextension,".bin") == 0   // openjp3d convention for raw little endian
-      || gdcm::System::StrCaseCmp(inputextension,".rgb") == 0 ) // imagemagick convention
+      || gdcm::System::StrCaseCmp(inputextension,".rgb") == 0   // imagemagick convention
+      || gdcm::System::StrCaseCmp(inputextension,".yuv") == 0 ) // ffmpeg convention
       {
       if( !size[0] || !size[1] )
         {
@@ -891,7 +896,7 @@ int main (int argc, char *argv[])
       raw.SetPixelFormat( pf );
       if( spp )
         {
-        if( pixelspp == 3 ) pi = gdcm::PhotometricInterpretation::RGB;
+        if( pixelspp == 3 && !pinter ) pi = gdcm::PhotometricInterpretation::RGB;
         }
       raw.SetPhotometricInterpretation( pi );
       raw.SetNeedByteSwap( false );
@@ -948,7 +953,7 @@ int main (int argc, char *argv[])
       gdcm::PhotometricInterpretation pi = refpi;
       if( spp )
         {
-        if( pixelspp == 3 ) pi = gdcm::PhotometricInterpretation::RGB;
+        if( pixelspp == 3 && !pinter ) pi = gdcm::PhotometricInterpretation::RGB;
         }
       rle.SetPhotometricInterpretation( pi );
 
@@ -966,6 +971,7 @@ int main (int argc, char *argv[])
 
     if(  gdcm::System::StrCaseCmp(inputextension,".pgm") == 0
       || gdcm::System::StrCaseCmp(inputextension,".pnm") == 0
+      || gdcm::System::StrCaseCmp(inputextension,".pbm") == 0
       || gdcm::System::StrCaseCmp(inputextension,".ppm") == 0 )
       {
       gdcm::PNMCodec pnm;
@@ -1113,6 +1119,7 @@ int main (int argc, char *argv[])
     {
     if(  gdcm::System::StrCaseCmp(outputextension,".pgm") == 0
       || gdcm::System::StrCaseCmp(outputextension,".pnm") == 0
+      || gdcm::System::StrCaseCmp(outputextension,".pbm") == 0
       || gdcm::System::StrCaseCmp(outputextension,".ppm") == 0 )
       {
       gdcm::PNMCodec pnm;

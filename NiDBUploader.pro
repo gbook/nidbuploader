@@ -15,12 +15,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-        anonymize.cpp
+    remotestatus.cpp
 
 HEADERS  += mainwindow.h \
-         anonymize.h
+    remotestatus.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    remotestatus.ui
 
 INCLUDEPATH += $$PWD/gdcm/Source/Attribute
 INCLUDEPATH += $$PWD/gdcm/Source/Common
@@ -29,15 +30,10 @@ INCLUDEPATH += $$PWD/gdcm/Source/DataStructureAndEncodingDefinition
 INCLUDEPATH += $$PWD/gdcm/Source/InformationObjectDefinition
 INCLUDEPATH += $$PWD/gdcm/Source/MediaStorageAndFileFormat
 INCLUDEPATH += $$PWD/gdcm/Source/MessageExchangeDefinition
-INCLUDEPATH += $$PWD/gdcm-win7/Source/Common # for gdcmConfigure.h
+INCLUDEPATH += $$PWD/gdcmbin/Source/Common # for gdcmConfigure.h
+HEADERS += $$PWD/gdcmbin/Source/Common/gdcmConfigure.h
 
-linux-g++: {
-    LIBS += -L$$PWD/gdcm-centos7/bin
-}
-else {
-    win32:CONFIG(release, debug|release): LIBS += -L$$PWD/gdcm-win7/bin/Release/
-    else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/gdcm-win7/bin/Debug/
-}
+LIBS += -L$$PWD/gdcmbin/bin/Release/
 
 LIBS += -lgdcmMSFF \
     -lgdcmCommon \
@@ -53,4 +49,7 @@ LIBS += -lgdcmMSFF \
     -lgdcmopenjp2 \
     -lgdcmzlib \
     -lsocketxx
+
+DISTFILES += \
+    squirrel.ico
 

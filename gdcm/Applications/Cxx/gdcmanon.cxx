@@ -51,15 +51,15 @@ static bool AnonymizeOneFileDumb(gdcm::Anonymizer &anon, const char *filename, c
   reader.SetFileName( filename );
   if( !reader.Read() )
     {
-    std::cerr << "Could not read : " << filename << std::endl;
+    std::cerr << "Could not read : " << filename;
     if( continuemode )
       {
-      std::cerr << "Skipping from anonymization process (continue mode)." << std::endl;
+      std::cerr << " -> Skipping from anonymization process (continue mode)." << std::endl;
       return true;
       }
     else
       {
-      std::cerr << "Check [--continue] option for skipping files." << std::endl;
+      std::cerr << " -> Check [--continue] option for skipping files." << std::endl;
       return false;
       }
     }
@@ -611,7 +611,7 @@ int main(int argc, char *argv[])
     crypto_factory = gdcm::CryptoFactory::GetFactoryInstance(crypto_lib);
     if (!crypto_factory)
       {
-      std::cerr << "Requested cryptoraphic library not configured." << std::endl;
+      std::cerr << "Requested cryptographic library not configured." << std::endl;
       return 1;
       }
     }

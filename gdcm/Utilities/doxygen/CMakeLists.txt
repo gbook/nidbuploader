@@ -252,7 +252,7 @@ find_package(LibXslt)
 if(LIBXSLT_XSLTPROC_EXECUTABLE)
   set(XSLT_PROCESSOR ${LIBXSLT_XSLTPROC_EXECUTABLE})
 # http://docbook.sourceforge.net/release/xsl/current/doc/manpages/man.output.quietly.html
-  set(XSLT_PROCESSOR_ARG --param man.output.quietly 1)
+  set(XSLT_PROCESSOR_ARG --param man.output.quietly 1 --maxdepth 6000 )
   # User can change the behavior at cmake time:
   if(NOT DEFINED GDCM_MANPAGES_USE_NONET)
     set(GDCM_MANPAGES_USE_NONET FALSE)
@@ -304,30 +304,30 @@ else()
 # -> http://stackoverflow.com/a/16605034/136285 ??
   endif()
 endif()
-if(XSLT_PROCESSOR)
-  configure_file(version.txt.in
-    version.txt @ONLY)
-foreach(docbook ${MANPAGES_XML})
-  add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${docbook}.1
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/man/${docbook}.xml ${CMAKE_CURRENT_BINARY_DIR}/${docbook}.xml
-    COMMAND ${XSLT_PROCESSOR} ${XSLT_PROCESSOR_ARG} ${CMAKE_CURRENT_BINARY_DIR}/${docbook}.xml
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/man/${docbook}.xml
+  if(XSLT_PROCESSOR)
+    configure_file(version.txt.in
+      version.txt @ONLY)
+    foreach(docbook ${MANPAGES_XML})
+      add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${docbook}.1
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/man/${docbook}.xml ${CMAKE_CURRENT_BINARY_DIR}/${docbook}.xml
+        COMMAND ${XSLT_PROCESSOR} ${XSLT_PROCESSOR_ARG} ${CMAKE_CURRENT_BINARY_DIR}/${docbook}.xml
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/man/${docbook}.xml
+        )
+    list(APPEND MANPAGES
+      ${CMAKE_CURRENT_BINARY_DIR}/${docbook}.1
+      )
+  endforeach()
+  add_custom_target(DOCBOOK_MANPAGES
+    ALL
+    DEPENDS ${MANPAGES}
+    COMMENT  "docbook manpages"
     )
-  list(APPEND MANPAGES
-    ${CMAKE_CURRENT_BINARY_DIR}/${docbook}.1
-    )
-endforeach()
-add_custom_target(DOCBOOK_MANPAGES
-  ALL
-  DEPENDS ${MANPAGES}
-  COMMENT  "docbook manpages"
+  install(FILES
+    ${MANPAGES}
+    DESTINATION ${GDCM_INSTALL_MAN_DIR}/man1 COMPONENT DebugDevel
   )
-install(FILES
-  ${MANPAGES}
-  DESTINATION ${GDCM_INSTALL_MAN_DIR}/man1 COMPONENT DebugDevel
-)
-else()
-  message(WARNING "Cannot build man page from docbook (need an XSL processor)")
-endif()
+  else()
+    message(WARNING "Cannot build man page from docbook (need an XSL processor)")
+  endif()
 endif() # GDCM_BUILD_DOCBOOK_MANPAGES

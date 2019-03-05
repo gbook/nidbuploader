@@ -15,6 +15,15 @@ string(TOLOWER ${JPEG_NAMESPACE} JPEG_LIBRARY_NAME)
 
 project(${JPEG_NAMESPACE} C)
 
+foreach(p
+    CMP0042
+    CMP0063
+    )
+  if(POLICY ${p})
+    cmake_policy(SET ${p} NEW)
+  endif()
+endforeach()
+
 # Do full dependency headers.
 include_regular_expression("^.*$")
 

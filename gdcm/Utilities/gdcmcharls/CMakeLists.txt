@@ -9,6 +9,15 @@ string(TOLOWER ${CHARLS_NAMESPACE} CHARLS_LIBRARY_NAME)
 
 project(${CHARLS_NAMESPACE} CXX)
 
+foreach(p
+    CMP0042
+    CMP0063
+    )
+  if(POLICY ${p})
+    cmake_policy(SET ${p} NEW)
+  endif()
+endforeach()
+
 #-----------------------------------------------------------------------------
 # CHARLS version number
 set(CHARLS_MAJOR_VERSION 1)
@@ -63,7 +72,8 @@ add_library(${CHARLS_LIBRARY_NAME} header.cpp  interface.cpp  jpegls.cpp
   )
 set_target_properties( ${CHARLS_LIBRARY_NAME} PROPERTIES
                               VERSION ${CHARLS_MAJOR_VERSION}.${CHARLS_MINOR_VERSION}
-                              SOVERSION ${CHARLS_MAJOR_VERSION})
+                              SOVERSION ${CHARLS_MAJOR_VERSION}
+                              ${CHARLS_LIBRARY_PROPERTIES})
 
 
 # Install library

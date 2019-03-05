@@ -33,10 +33,6 @@
     #include <unistd.h>
 #endif
 
-/* this supposedly will make the program run on WinXP */
-//#include <QtPlugin>
-//Q_IMPORT_PLUGIN (QWindowsIntegrationPlugin)
-
 namespace Ui {
 class MainWindow;
 }
@@ -46,7 +42,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     void SetBuildDate();
     void PopulateModality();
@@ -112,6 +108,7 @@ public:
 
     QFile logfile; /* the logfile */
     QFile idfile; /* the file containing IDs */
+    QFile txnfile; /* transaction history */
 
 private slots:
     void progressChanged(qint64 a, qint64 b);

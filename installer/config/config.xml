@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Installer>
     <Name>NiDBUploader</Name>
-    <Version>2019.0.1</Version>
+    <Version>2019.2.28</Version>
     <Title>NiDBUploader Installer</Title>
     <Publisher>NiDB</Publisher>
     <StartMenuDir>NiDB Uploader</StartMenuDir>

@@ -268,12 +268,19 @@ private final static String GDCMJNI = "gdcmjni";
  final String OS = System.getProperty("os.name").toLowerCase();
      return (OS.indexOf("nux") >= 0);
  }
+ private static boolean isMac() {
+ final String OS = System.getProperty("os.name").toLowerCase();
+     return (OS.indexOf("mac") >= 0);
+ }
  private static String getLibName() {
    if( isWindows() ) {
    final String name = "/" + GDCMJNI + ".dll";
    return name;
    } else if( isUnix() ) {
    final String name = "/lib" + GDCMJNI + ".so";
+   return name;
+   } else if( isMac() ) {
+   final String name = "/lib" + GDCMJNI + ".jnilib";
    return name;
    }
    return null;
@@ -302,7 +309,7 @@ private final static String GDCMJNI = "gdcmjni";
    try {
      java.io.InputStream in = gdcmJNI.class.getResourceAsStream(name);
      // always write to different location
-     java.io.File fileOut = new java.io.File(System.getProperty("java.io.tmpdir") + "/" + path + name);
+     final java.io.File fileOut = new java.io.File(System.getProperty("java.io.tmpdir") + "/" + path + name);
      // create intermediate directory:
      fileOut.getParentFile().mkdirs();
      byte[] buffer = new byte[1024];
@@ -314,6 +321,13 @@ private final static String GDCMJNI = "gdcmjni";
      in.close();
      fos.close();
      System.load(fileOut.getAbsolutePath());
+     Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+       public void run() {
+         // cleanup temp dir:
+         fileOut.delete();
+         fileOut.getParentFile().delete();
+       }
+     }));
    } catch (Exception e) {
      System.err.println("Jar code library failed to load. \n" + e);
      System.exit(1);

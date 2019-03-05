@@ -209,7 +209,7 @@ static bool parsejp2_imp( const char * const stream, const size_t file_size, boo
     if( len32 == 1 ) /* 64bits ? */
       {
       bool b = read64(&cur, &cur_size, &len64);
-      assert( b );
+      assert( b ); (void)b;
       len64 -= 8;
       }
     if( marker == JP2C )
@@ -874,9 +874,107 @@ bool JPEG2000Codec::DecodeByStreams(std::istream &is, std::ostream &os)
 }
 
 template<typename T>
-void rawtoimage_fill(T *inputbuffer, int w, int h, int numcomps, opj_image_t *image, int pc)
+void rawtoimage_fill2(const T *inputbuffer, int w, int h, int numcomps, opj_image_t *image, int pc, int bitsallocated, int bitsstored, int highbit, int sign)
 {
-  T *p = inputbuffer;
+  uint16_t pmask = 0xffff;
+  pmask = (uint16_t)(pmask >> ( bitsallocated - bitsstored ));
+
+  const T *p = inputbuffer;
+  if( sign )
+  {
+    // smask : to check the 'sign' when BitsStored != BitsAllocated
+    uint16_t smask = 0x0001;
+    smask = (uint16_t)(
+      smask << ( 16 - (bitsallocated - bitsstored + 1) ));
+    // nmask : to propagate sign bit on negative values
+    int16_t nmask = (int16_t)0x8000;
+    nmask = (int16_t)(nmask >> ( bitsallocated - bitsstored - 1 ));
+     if( pc )
+      {
+      for(int compno = 0; compno < numcomps; compno++)
+        {
+        for (int i = 0; i < w * h; i++)
+          {
+          /* compno : 0 = GREY, (0, 1, 2) = (R, G, B) */
+          uint16_t c = *p;
+          c = (uint16_t)(c >> (bitsstored - highbit - 1));
+          if ( c & smask )
+            {
+            c = (uint16_t)(c | nmask);
+            }
+          else
+            {
+            c = c & pmask;
+            }
+          int16_t fix; memcpy(&fix, &c, sizeof fix);
+          image->comps[compno].data[i] = fix;
+          ++p;
+          }
+        }
+      }
+    else
+      {
+      for (int i = 0; i < w * h; i++)
+        {
+        for(int compno = 0; compno < numcomps; compno++)
+          {
+          /* compno : 0 = GREY, (0, 1, 2) = (R, G, B) */
+          uint16_t c = *p;
+          c = (uint16_t)(c >> (bitsstored - highbit - 1));
+          if ( c & smask )
+            {
+            c = (uint16_t)(c | nmask);
+            }
+          else
+            {
+            c = c & pmask;
+            }
+          int16_t fix; memcpy(&fix, &c, sizeof fix);
+          image->comps[compno].data[i] = fix;
+          ++p;
+          }
+        }
+      }
+   }
+  else
+  {
+    if( pc )
+      {
+      for(int compno = 0; compno < numcomps; compno++)
+        {
+        for (int i = 0; i < w * h; i++)
+          {
+          /* compno : 0 = GREY, (0, 1, 2) = (R, G, B) */
+          uint16_t c = *p;
+          c = (uint16_t)(
+            (c >> (bitsstored - highbit - 1)) & pmask);
+          image->comps[compno].data[i] = c;
+          ++p;
+          }
+        }
+      }
+    else
+      {
+      for (int i = 0; i < w * h; i++)
+        {
+        for(int compno = 0; compno < numcomps; compno++)
+          {
+          /* compno : 0 = GREY, (0, 1, 2) = (R, G, B) */
+          uint16_t c = *p;
+          c = (uint16_t)(
+            (c >> (bitsstored - highbit - 1)) & pmask);
+           image->comps[compno].data[i] = c;
+          ++p;
+          }
+        }
+      }
+  }
+}
+
+template<typename T>
+void rawtoimage_fill(const T *inputbuffer, int w, int h, int numcomps, opj_image_t *image, int pc)
+{
+  const T *p = inputbuffer;
   if( pc )
     {
     for(int compno = 0; compno < numcomps; compno++)
@@ -903,9 +1001,9 @@ void rawtoimage_fill(T *inputbuffer, int w, int h, int numcomps, opj_image_t *im
     }
 }
 
-opj_image_t* rawtoimage(char *inputbuffer, opj_cparameters_t *parameters,
-  int fragment_size, int image_width, int image_height, int sample_pixel,
-  int bitsallocated, int bitsstored, int sign, int quality, int pc)
+opj_image_t* rawtoimage(const char *inputbuffer, opj_cparameters_t *parameters,
+  size_t fragment_size, int image_width, int image_height, int sample_pixel,
+  int bitsallocated, int bitsstored, int highbit, int sign, int quality, int pc)
 {
   (void)quality;
   (void)fragment_size;
@@ -934,7 +1032,7 @@ opj_image_t* rawtoimage(char *inputbuffer, opj_cparameters_t *parameters,
     }
   assert( bitsallocated % 8 == 0 );
   // eg. fragment_size == 63532 and 181 * 117 * 3 * 8 == 63531 ...
-  assert( ((fragment_size + 1)/2 ) * 2 == ((image_height * image_width * numcomps * (bitsallocated/8) + 1)/ 2 )* 2 );
+  assert( ((fragment_size + 1)/2 ) * 2 == (((size_t)image_height * image_width * numcomps * (bitsallocated/8) + 1)/ 2 )* 2 );
   int subsampling_dx = parameters->subsampling_dx;
   int subsampling_dy = parameters->subsampling_dy;
 
@@ -947,6 +1045,7 @@ opj_image_t* rawtoimage(char *inputbuffer, opj_cparameters_t *parameters,
   //assert( bitsallocated == 8 );
   for(int i = 0; i < numcomps; i++) {
     cmptparm[i].prec = bitsstored;
+    cmptparm[i].prec = bitsallocated; // FIXME
     cmptparm[i].bpp = bitsallocated;
     cmptparm[i].sgnd = sign;
     cmptparm[i].dx = subsampling_dx;
@@ -973,33 +1072,47 @@ opj_image_t* rawtoimage(char *inputbuffer, opj_cparameters_t *parameters,
     {
     if( sign )
       {
-      rawtoimage_fill<int8_t>((int8_t*)inputbuffer,w,h,numcomps,image,pc);
+      rawtoimage_fill<int8_t>((const int8_t*)inputbuffer,w,h,numcomps,image,pc);
       }
     else
       {
-      rawtoimage_fill<uint8_t>((uint8_t*)inputbuffer,w,h,numcomps,image,pc);
+      rawtoimage_fill<uint8_t>((const uint8_t*)inputbuffer,w,h,numcomps,image,pc);
       }
     }
   else if (bitsallocated <= 16)
     {
-    if( sign )
+    if( bitsallocated != bitsstored )
       {
-      rawtoimage_fill<int16_t>((int16_t*)inputbuffer,w,h,numcomps,image,pc);
-      }
+      if( sign )
+        {
+        rawtoimage_fill2<int16_t>((const int16_t*)inputbuffer,w,h,numcomps,image,pc, bitsallocated, bitsstored, highbit, sign);
+        }
+      else
+        {
+        rawtoimage_fill2<uint16_t>((const uint16_t*)inputbuffer,w,h,numcomps,image,pc, bitsallocated, bitsstored, highbit, sign);
+        }
+       }
     else
       {
-      rawtoimage_fill<uint16_t>((uint16_t*)inputbuffer,w,h,numcomps,image,pc);
+      if( sign )
+        {
+        rawtoimage_fill<int16_t>((const int16_t*)inputbuffer,w,h,numcomps,image,pc);
+        }
+      else
+        {
+        rawtoimage_fill<uint16_t>((const uint16_t*)inputbuffer,w,h,numcomps,image,pc);
+        }
       }
     }
   else if (bitsallocated <= 32)
     {
     if( sign )
       {
-      rawtoimage_fill<int32_t>((int32_t*)inputbuffer,w,h,numcomps,image,pc);
+      rawtoimage_fill<int32_t>((const int32_t*)inputbuffer,w,h,numcomps,image,pc);
       }
     else
       {
-      rawtoimage_fill<uint32_t>((uint32_t*)inputbuffer,w,h,numcomps,image,pc);
+      rawtoimage_fill<uint32_t>((const uint32_t*)inputbuffer,w,h,numcomps,image,pc);
       }
     }
   else // dead branch ?
@@ -1014,11 +1127,13 @@ opj_image_t* rawtoimage(char *inputbuffer, opj_cparameters_t *parameters,
 bool JPEG2000Codec::CodeFrameIntoBuffer(char * outdata, size_t outlen, size_t & complen, const char * inputdata, size_t inputlength )
 {
   complen = 0; // default init
+#if 0
   if( NeedOverlayCleanup )
     {
     gdcmErrorMacro( "TODO" );
     return false;
     }
+#endif
   const unsigned int *dims = this->GetDimensions();
   int image_width = dims[0];
   int image_height = dims[1];
@@ -1026,12 +1141,8 @@ bool JPEG2000Codec::CodeFrameIntoBuffer(char * outdata, size_t outlen, size_t & 
   const PixelFormat &pf = this->GetPixelFormat();
   int sample_pixel = pf.GetSamplesPerPixel();
   int bitsallocated = pf.GetBitsAllocated();
-#ifndef GDCM_SUPPORT_BROKEN_IMPLEMENTATION
   int bitsstored = pf.GetBitsStored();
-#else
-  // Usual D_CLUNIE_RG3_JPLY.dcm kludge:
-  int bitsstored = pf.GetBitsAllocated();
-#endif
+  int highbit = pf.GetHighBit();
   int sign = pf.GetPixelRepresentation();
   int quality = 100;
 
@@ -1101,10 +1212,10 @@ bool JPEG2000Codec::CodeFrameIntoBuffer(char * outdata, size_t outlen, size_t & 
   /* decode the source image */
   /* ----------------------- */
 
-  image = rawtoimage((char*)inputdata, &parameters,
-    static_cast<int>( inputlength ),
+  image = rawtoimage((const char*)inputdata, &parameters,
+    inputlength,
     image_width, image_height,
-    sample_pixel, bitsallocated, bitsstored, sign, quality, this->GetPlanarConfiguration() );
+    sample_pixel, bitsallocated, bitsstored, highbit, sign, quality, this->GetPlanarConfiguration() );
   if (!image) {
     return false;
   }
@@ -1255,7 +1366,7 @@ bool JPEG2000Codec::GetHeaderInfo(const char * dummy_buffer, size_t buf_size, Tr
   opj_codec_t* dinfo = NULL;  /* handle to a decompressor */
   opj_stream_t *cio = NULL;
   opj_image_t *image = NULL;
-  unsigned char *src = (unsigned char*)dummy_buffer;
+  const unsigned char *src = (const unsigned char*)dummy_buffer;
   size_t file_length = buf_size;
 
   /* set decoding parameters to default values */

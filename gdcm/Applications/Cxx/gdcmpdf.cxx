@@ -37,7 +37,7 @@
 static std::string getInfoDate(Dict *infoDict, const char *key)
 {
   Object obj;
-  char *s;
+  const char *s;
   int year, mon, day, hour, min, sec, n;
   struct tm tmStruct;
   //char buf[256];
@@ -49,7 +49,8 @@ static std::string getInfoDate(Dict *infoDict, const char *key)
   if (infoDict->lookup((char*)key, &obj)->isString())
 #endif
     {
-    s = obj.getString()->getCString();
+    const GooString* gs = obj.getString();
+    s = gs->getCString();
     if (s[0] == 'D' && s[1] == ':')
       {
       s += 2;
@@ -101,11 +102,11 @@ static std::string getInfoDate(Dict *infoDict, const char *key)
   return out;
 }
 
-static std::string getInfoString(Dict *infoDict, const char *key, UnicodeMap *uMap, GBool & unicode)
+static std::string getInfoString(Dict *infoDict, const char *key, UnicodeMap *uMap, bool & unicode)
 {
   Object obj;
-  GooString *s1;
-  GBool isUnicode = gFalse;
+  const GooString *s1;
+  bool isUnicode = false;
   Unicode u;
   char buf[8];
   int i, n;
@@ -121,12 +122,12 @@ static std::string getInfoString(Dict *infoDict, const char *key, UnicodeMap *uM
     if ((s1->getChar(0) & 0xff) == 0xfe &&
       (s1->getChar(1) & 0xff) == 0xff)
       {
-      isUnicode = gTrue;
+      isUnicode = true;
       i = 2;
       }
     else
       {
-      isUnicode = gFalse;
+      isUnicode = false;
       i = 0;
       }
     while (i < obj.getString()->getLength())
@@ -397,7 +398,7 @@ http://msdn.microsoft.com/en-us/library/078sfkak(VS.80).aspx
   std::string creationdate;
   std::string moddate;
 
-  GBool isUnicode = gFalse;
+  bool isUnicode = false;
   if (doc->isOk())
     {
 #ifdef LIBPOPPLER_NEW_OBJECT_API

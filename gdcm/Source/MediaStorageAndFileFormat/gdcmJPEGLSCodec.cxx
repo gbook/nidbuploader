@@ -109,6 +109,7 @@ bool JPEGLSCodec::GetHeaderInfo(std::istream &is, TransferSyntax &ts)
   else if( metadata.components == 3 )
     {
     PI = PhotometricInterpretation::RGB;
+    PlanarConfiguration = 1;
     this->PF.SetSamplesPerPixel( 3 );
     }
   else assert(0);
@@ -185,7 +186,7 @@ bool JPEGLSCodec::Decode(DataElement const &in, DataElement &out)
   if( NumberOfDimensions == 2 )
     {
     const SequenceOfFragments *sf = in.GetSequenceOfFragments();
-    assert( sf );
+    if (!sf) return false;
     unsigned long totalLen = sf->ComputeByteLength();
     char *buffer = new char[totalLen];
     sf->GetBuffer(buffer, totalLen);
@@ -203,15 +204,15 @@ bool JPEGLSCodec::Decode(DataElement const &in, DataElement &out)
   else if( NumberOfDimensions == 3 )
     {
     const SequenceOfFragments *sf = in.GetSequenceOfFragments();
-    assert( sf );
-    gdcmAssertAlwaysMacro( sf->GetNumberOfFragments() == Dimensions[2] );
+    if (!sf) return false;
+    if (sf->GetNumberOfFragments() != Dimensions[2]) return false;
     std::stringstream os;
     for(unsigned int i = 0; i < sf->GetNumberOfFragments(); ++i)
       {
       const Fragment &frag = sf->GetFragment(i);
       if( frag.IsEmpty() ) return false;
       const ByteValue *bv = frag.GetByteValue();
-      assert( bv );
+      if (!bv) return false;
       size_t totalLen = bv->GetLength();
       char *mybuffer = new char[totalLen];
 
@@ -248,7 +249,7 @@ bool JPEGLSCodec::Decode(DataElement const &in, DataElement &out)
         {
         return false;
         }
-      os.write( (char*)&rgbyteOut[0], rgbyteOut.size() );
+      os.write( (const char*)&rgbyteOut[0], rgbyteOut.size() );
 
       if(!r) return false;
       assert( r == true );
@@ -374,7 +375,7 @@ bool JPEGLSCodec::Code(DataElement const &in, DataElement &out)
     const char *inputdata = input + dim * image_len;
 
     std::vector<BYTE> rgbyteCompressed;
-    rgbyteCompressed.resize(image_width * image_height * 4);
+    rgbyteCompressed.resize(image_width * image_height * 4 * 2); // overallocate in case of weird case
 
     size_t cbyteCompressed;
     const bool b = this->CodeFrameIntoBuffer((char*)&rgbyteCompressed[0], rgbyteCompressed.size(), cbyteCompressed, inputdata, inputlength );

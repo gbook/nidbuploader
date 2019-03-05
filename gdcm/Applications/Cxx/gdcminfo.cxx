@@ -32,6 +32,7 @@
 #include "gdcmDirectory.h"
 #include "gdcmImageHelper.h"
 #include "gdcmSplitMosaicFilter.h"
+#include "gdcmImageChangePlanarConfiguration.h"
 
 #ifdef GDCM_USE_SYSTEM_POPPLER
 #include <poppler/poppler-config.h>
@@ -188,7 +189,7 @@ static int checkdeflated(const char *name)
 static std::string getInfoDate(Dict *infoDict, const char *key)
 {
   Object obj;
-  char *s;
+  const char *s;
   int year, mon, day, hour, min, sec, n;
   struct tm tmStruct;
   //char buf[256];
@@ -200,7 +201,8 @@ static std::string getInfoDate(Dict *infoDict, const char *key)
   if (infoDict->lookup((char*)key, &obj)->isString())
 #endif
     {
-    s = obj.getString()->getCString();
+    const GooString* gs = obj.getString();
+    s = gs->getCString();
     if (s[0] == 'D' && s[1] == ':')
       {
       s += 2;
@@ -255,8 +257,8 @@ static std::string getInfoDate(Dict *infoDict, const char *key)
 static std::string getInfoString(Dict *infoDict, const char *key, UnicodeMap *uMap)
 {
   Object obj;
-  GooString *s1;
-  GBool isUnicode;
+  const GooString *s1;
+  bool isUnicode;
   Unicode u;
   char buf[8];
   int i, n;
@@ -272,12 +274,12 @@ static std::string getInfoString(Dict *infoDict, const char *key, UnicodeMap *uM
     if ((s1->getChar(0) & 0xff) == 0xfe &&
       (s1->getChar(1) & 0xff) == 0xff)
       {
-      isUnicode = gTrue;
+      isUnicode = true;
       i = 2;
       }
     else
       {
-      isUnicode = gFalse;
+      isUnicode = false;
       i = 0;
       }
     while (i < obj.getString()->getLength())
@@ -428,7 +430,19 @@ static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs
 
     if( md5sum )
       {
+      int ret = 0;
       char *buffer = new char[ pimage->GetBufferLength() ];
+      gdcm::ImageChangePlanarConfiguration icpc;
+      icpc.SetPlanarConfiguration( 0 );
+      icpc.SetInput( *pimage );
+      bool b = icpc.Change();
+      if( !b )
+        {
+        std::cerr << "Could not change the Planar Configuration: " << filename << std::endl;
+        return 1;
+        }
+      pimage = &icpc.GetOutput();
+
       if( pimage->GetBuffer( buffer ) )
         {
         char digest[33] = {};
@@ -437,9 +451,11 @@ static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs
         }
       else
         {
-        std::cout << "Problem decompressing file: " << filename << std::endl;
+        std::cerr << "Problem decompressing file: " << filename << std::endl;
+        ret = 1;
         }
       delete[] buffer;
+      return ret;
       }
     }
   else if ( ms == gdcm::MediaStorage::EncapsulatedPDFStorage )
@@ -523,10 +539,10 @@ static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs
       int pages = doc->getNumPages();
       const char *encrypted = doc->isEncrypted() ? "yes" : "no";
       //  printf("yes (print:%s copy:%s change:%s addNotes:%s)\n",
-      //   doc->okToPrint(gTrue) ? "yes" : "no",
-      //   doc->okToCopy(gTrue) ? "yes" : "no",
-      //   doc->okToChange(gTrue) ? "yes" : "no",
-      //   doc->okToAddNotes(gTrue) ? "yes" : "no");
+      //   doc->okToPrint(true) ? "yes" : "no",
+      //   doc->okToCopy(true) ? "yes" : "no",
+      //   doc->okToChange(true) ? "yes" : "no",
+      //   doc->okToAddNotes(true) ? "yes" : "no");
 
       // print linearization info
       const char *optimized = doc->isLinearized() ? "yes" : "no";

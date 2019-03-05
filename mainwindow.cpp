@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
+using namespace std;
 
 /* ------------------------------------------------- */
 /* --------- MainWindow ---------------------------- */
@@ -14,6 +14,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     idfile.setFileName("idmap.log");
     idfile.open(QIODevice::Append | QIODevice::Text);
+
+    txnfile.setFileName("transactions.csv");
+    txnfile.open(QIODevice::Append | QIODevice::Text);
 
     WriteLog("Entering MainWindow()");
     ui->setupUi(this);
@@ -464,7 +467,8 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
     fileModality = QString("");
     gdcm::Reader r;
     r.SetFileName(f.toStdString().c_str());
-    if (r.Read()) {
+    if (r.CanRead()) {
+        r.Read();
         //qDebug("%s is a DICOM file",f.toStdString().c_str());
         fileType = QString("DICOM");
         gdcm::StringFilter sf;
@@ -733,6 +737,14 @@ void MainWindow::DoUpload(bool uploadAll) {
     while (transactionNumber <= 0) {
         QTest::qWait(100);
     }
+
+    /* successfully created a transaction, so record this in the transaction log */
+    if (!GetConnectionParms(connServer, connUsername, connPassword)) {
+        WriteLog("Unable to get connection info");
+    }
+    QTextStream out(&txnfile);
+    QDateTime current = QDateTime::currentDateTime();
+    out << current.toString("ddd MMMM d yyyy h:mm:ss ap") << "," << transactionNumber << "," << connServer << "," << connUsername << "," << connPassword << endl;
 
     /* this will anonymize and then upload all of the files in the list */
     int rowCount = ui->tableFiles->rowCount();
