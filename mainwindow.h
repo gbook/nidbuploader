@@ -68,8 +68,10 @@ public:
     void StartTransaction();
     void EndTransaction();
 
-    QNetworkProxy GetProxy();
+    void GetProxy();
     void WriteLog(QString msg);
+
+    QNetworkProxy proxy;
 
     QNetworkAccessManager *networkManager;
 
@@ -165,6 +167,16 @@ private slots:
     void on_btnLoadEquipmentIDs_clicked();
 
     void on_btnResendFailedObjects_clicked();
+
+    void on_btnViewRemoteStatus_clicked();
+
+    void on_cmbProxyType_activated(int index);
+
+    void on_chkUseProxy_stateChanged(int arg1);
+
+    void on_txtDataDir_textChanged(const QString &arg1);
+
+    void on_cmbModality_activated(const QString &arg1);
 
 private:
     Ui::MainWindow *ui;

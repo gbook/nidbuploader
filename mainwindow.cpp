@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "remotestatus.h"
+
 using namespace std;
 
 /* ------------------------------------------------- */
@@ -57,6 +59,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->btnUploadAll->setEnabled(false);
     ui->btnResendFailedObjects->setEnabled(false);
 
+    //qApp->setStyleSheet("QGroupBox {  border: 1px solid black; } QGroupBox::title { background-color: transparent; subcontrol-origin: margin; left: 10px; padding:2 13px; } ");
+
     WriteLog("Leaving MainWindow()");
 }
 
@@ -69,6 +73,7 @@ MainWindow::~MainWindow()
     delete ui;
     logfile.close();
     idfile.close();
+    txnfile.close();
 }
 
 
@@ -165,7 +170,7 @@ void MainWindow::on_pushButton_clicked()
 void MainWindow::on_btnTestConn_clicked()
 {
     WriteLog("Calling SetProxy() in on_btnTestConn_clicked()...");
-    networkManager->setProxy(GetProxy());
+    networkManager->setProxy(proxy);
     WriteLog("Done calling SetProxy() in on_btnTestConn_clicked()...");
 
     if (GetConnectionParms(connServer, connUsername, connPassword)) {
@@ -331,6 +336,8 @@ void MainWindow::onGetReplyUpload()
 /* ------------------------------------------------- */
 void MainWindow::onNetworkError(QNetworkReply::NetworkError networkError)
 {
+    (void)networkError;
+
     WriteLog("Entering onNetworkError()");
 
     QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
@@ -675,7 +682,7 @@ void MainWindow::on_btnUploadAll_clicked()
 /* --------- DoUpload ------------------------------ */
 /* ------------------------------------------------- */
 void MainWindow::DoUpload(bool uploadAll) {
-    networkManager->setProxy(GetProxy());
+    networkManager->setProxy(proxy);
 
     WriteLog("Entering on_btnUploadAll_clicked()");
     if (ui->lstConn->selectedItems().length() < 1) {
@@ -684,17 +691,17 @@ void MainWindow::DoUpload(bool uploadAll) {
     }
 
     /* check the fields before attempting to upload */
-    if (ui->cmbInstanceID->currentData() == "") {
+    if (ui->cmbInstanceID->count() == 0) {
         ShowMessageBox("Instance ID is blank");
         ui->cmbInstanceID->setFocus();
         return;
     }
-    if (ui->cmbProjectID->currentData() == "") {
+    if (ui->cmbProjectID->count() == 0) {
         ShowMessageBox("Project ID is blank");
         ui->cmbProjectID->setFocus();
         return;
     }
-    if (ui->cmbSiteID->currentData() == "") {
+    if (ui->cmbSiteID->count() == 0) {
         ShowMessageBox("Site ID is blank");
         ui->cmbSiteID->setFocus();
         return;
@@ -1221,7 +1228,7 @@ int MainWindow::UploadFileList(QStringList list, QStringList md5list)
     /* loop through the list of files */
     ui->progUpload->setRange(0,100);
     for (int i=0;i<list.size();i++) {
-        qDebug("UploadFileList [%d] [%s]", i, list[i].toStdString().c_str());
+        //qDebug("UploadFileList [%d] [%s]", i, list[i].toStdString().c_str());
         QFile *file = new QFile(list[i]);
         QHttpPart filePart;
         filePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"files[]\"; filename=\""+ file->fileName() + "\""));
@@ -1348,7 +1355,7 @@ void MainWindow::on_chkRemovePatientBirthDate_clicked() { SetTempDir(); }
 /* ------------------------------------------------- */
 void MainWindow::on_lstConn_clicked(const QModelIndex &index)
 {
-    //index;
+    (void)index;
     ui->lblConnMessage->setText("");
 }
 
@@ -1367,7 +1374,7 @@ void MainWindow::on_btnRemoveConn_clicked()
 /* ------------------------------------------------- */
 void MainWindow::on_btnLoadInstanceIDs_clicked()
 {
-    networkManager->setProxy(GetProxy());
+    networkManager->setProxy(proxy);
     /* get list of instances through the API */
 
     if (ui->lstConn->count() < 1) {
@@ -1407,7 +1414,7 @@ void MainWindow::on_btnLoadInstanceIDs_clicked()
 /* ------------------------------------------------- */
 void MainWindow::on_btnLoadProjectIDs_clicked()
 {
-    networkManager->setProxy(GetProxy());
+    networkManager->setProxy(proxy);
     /* get list of instances through the API */
     if (ui->lstConn->count() < 1) {
         ShowMessageBox("No connections available");
@@ -1449,7 +1456,8 @@ void MainWindow::on_btnLoadProjectIDs_clicked()
 /* ------------------------------------------------- */
 void MainWindow::on_btnLoadSiteIDs_clicked()
 {
-    networkManager->setProxy(GetProxy());
+    GetProxy();
+    networkManager->setProxy(proxy);
     /* get list of instances through the API */
 
     if (ui->lstConn->count() < 1) {
@@ -1492,7 +1500,8 @@ void MainWindow::on_btnLoadSiteIDs_clicked()
 /* ------------------------------------------------- */
 void MainWindow::on_btnLoadEquipmentIDs_clicked()
 {
-    networkManager->setProxy(GetProxy());
+    GetProxy();
+    networkManager->setProxy(proxy);
     /* get list of instances through the API */
 
     if (ui->lstConn->count() < 1) {
@@ -1700,7 +1709,8 @@ void MainWindow::onGetReplyEquipmentList()
 void MainWindow::StartTransaction()
 {
     WriteLog("Entering StartTransaction()");
-    networkManager->setProxy(GetProxy());
+    GetProxy();
+    networkManager->setProxy(proxy);
     /* get list of instances through the API */
 
     transactionNumber = 0;
@@ -1777,7 +1787,8 @@ void MainWindow::onGetReplyStartTransaction()
 /* ------------------------------------------------- */
 void MainWindow::EndTransaction()
 {
-    networkManager->setProxy(GetProxy());
+    GetProxy();
+    networkManager->setProxy(proxy);
     /* get list of instances through the API */
 
     if (ui->lstConn->count() < 1) {
@@ -1848,7 +1859,7 @@ void MainWindow::onGetReplyEndTransaction()
 /* ------------------------------------------------- */
 void MainWindow::on_cmbInstanceID_currentIndexChanged(int index)
 {
-    //index;
+    (void)index;
     on_btnLoadProjectIDs_clicked();
 }
 
@@ -1931,9 +1942,9 @@ void MainWindow::on_btnRemoveSelected_clicked()
 /* ------------------------------------------------- */
 /* --------- GetProxy ------------------------------ */
 /* ------------------------------------------------- */
-QNetworkProxy MainWindow::GetProxy()
+void MainWindow::GetProxy()
 {
-    QNetworkProxy proxy;
+    //QNetworkProxy proxy;
     if (ui->chkUseProxy->isChecked()) {
         QVariant proxyType = ui->cmbProxyType->currentData();
 
@@ -1952,7 +1963,7 @@ QNetworkProxy MainWindow::GetProxy()
     else {
         proxy.setType(QNetworkProxy::NoProxy);
     }
-    return proxy;
+    //return proxy;
 }
 
 
@@ -2004,4 +2015,64 @@ bool MainWindow::fileExists(QString path) {
 void MainWindow::on_btnResendFailedObjects_clicked()
 {
     DoUpload(false);
+}
+
+
+/* ------------------------------------------------- */
+/* --------- on_btnViewRemoteStatus_clicked -------- */
+/* ------------------------------------------------- */
+void MainWindow::on_btnViewRemoteStatus_clicked()
+{
+    RemoteStatus *rmtStatus = new RemoteStatus();
+    rmtStatus->SetMainWindow(this);
+    rmtStatus->show();
+}
+
+void MainWindow::on_cmbProxyType_activated(int index)
+{
+    (void)index;
+    ui->chkUseProxy->setCheckState(Qt::Checked);
+}
+
+void MainWindow::on_chkUseProxy_stateChanged(int arg1)
+{
+    if (arg1 == Qt::Checked) {
+        ui->cmbProxyType->setEnabled(true);
+        ui->proxyPort->setEnabled(true);
+        ui->proxyHostname->setEnabled(true);
+        ui->proxyPassword->setEnabled(true);
+        ui->proxyUsername->setEnabled(true);
+        ui->lblProxyHostname->setEnabled(true);
+        ui->lblProxyPort->setEnabled(true);
+        ui->lblProxyPassword->setEnabled(true);
+        ui->lblProxyUsername->setEnabled(true);
+    }
+    else {
+        ui->cmbProxyType->setEnabled(false);
+        ui->proxyPort->setEnabled(false);
+        ui->proxyHostname->setEnabled(false);
+        ui->proxyPassword->setEnabled(false);
+        ui->proxyUsername->setEnabled(false);
+        ui->lblProxyHostname->setEnabled(false);
+        ui->lblProxyPort->setEnabled(false);
+        ui->lblProxyPassword->setEnabled(false);
+        ui->lblProxyUsername->setEnabled(false);
+    }
+}
+
+void MainWindow::on_txtDataDir_textChanged(const QString &arg1)
+{
+    QDir pathDir(arg1);
+    if (pathDir.exists())
+        ui->txtDataDir->setStyleSheet("QLineEdit { background: #ddffdd; }");
+    else
+        ui->txtDataDir->setStyleSheet("QLineEdit { background: #ffdddd; }");
+}
+
+void MainWindow::on_cmbModality_activated(const QString &arg1)
+{
+    if (arg1.contains("dicom", Qt::CaseInsensitive))
+        ui->grpAnonymize->setEnabled(true);
+    else
+        ui->grpAnonymize->setEnabled(false);
 }

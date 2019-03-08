@@ -33,12 +33,12 @@
       <widget class="QPushButton" name="btnRefresh">
        <property name="maximumSize">
         <size>
-         <width>80</width>
+         <width>16777215</width>
          <height>16777215</height>
         </size>
        </property>
        <property name="text">
-        <string>Refresh</string>
+        <string>Refresh Submission History</string>
        </property>
       </widget>
      </item>
@@ -58,7 +58,24 @@
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QPushButton" name="btnViewRemoteStatus">
+       <property name="text">
+        <string>View Remote Status</string>
+       </property>
+      </widget>
+     </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="lblStatus">
+     <property name="styleSheet">
+      <string notr="true">color: red</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QLabel" name="label">
@@ -112,7 +129,12 @@
      </column>
      <column>
       <property name="text">
-       <string>New UID/Study</string>
+       <string>New UID</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>New StudyNum</string>
       </property>
      </column>
      <column>
@@ -140,7 +162,39 @@
        <string># files</string>
       </property>
      </column>
+     <column>
+      <property name="text">
+       <string>Status</string>
+      </property>
+     </column>
     </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnClose">
+       <property name="text">
+        <string>Close</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

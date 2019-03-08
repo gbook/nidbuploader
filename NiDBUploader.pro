@@ -15,10 +15,12 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    remotestatus.cpp
+    remotestatus.cpp \
+    network.cpp
 
 HEADERS  += mainwindow.h \
-    remotestatus.h
+    remotestatus.h \
+    network.h
 
 FORMS    += mainwindow.ui \
     remotestatus.ui
@@ -33,7 +35,16 @@ INCLUDEPATH += $$PWD/gdcm/Source/MessageExchangeDefinition
 INCLUDEPATH += $$PWD/gdcmbin/Source/Common # for gdcmConfigure.h
 HEADERS += $$PWD/gdcmbin/Source/Common/gdcmConfigure.h
 
-LIBS += -L$$PWD/gdcmbin/bin/Release/
+#LIBS += -L$$PWD/gdcmbin/bin/Release/
+
+contains(QT_ARCH, i386) {
+    win32:CONFIG(release, debug|release): LIBS += -L$$PWD/gdcmbin32/bin/Release/
+    else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/gdcmbin32/bin/Debug/
+} else {
+    win32:CONFIG(release, debug|release): LIBS += -L$$PWD/gdcmbin/bin/Release/
+    else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/gdcmbin/bin/Debug/
+}
+
 
 LIBS += -lgdcmMSFF \
     -lgdcmCommon \
