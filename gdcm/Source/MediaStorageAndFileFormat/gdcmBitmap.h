@@ -39,8 +39,8 @@ class GDCM_EXPORT Bitmap : public Object
 {
 public:
   Bitmap();
-  ~Bitmap();
-  void Print(std::ostream &) const;
+  ~Bitmap() override;
+  void Print(std::ostream &) const override;
 
   virtual bool AreOverlaysInPixelData() const { return false; }
   virtual bool UnusedBitsPresentInPixelData() const { return false; }
@@ -54,6 +54,7 @@ public:
   /// \warning you need to call SetPixelFormat first (before SetPlanarConfiguration) for consistency checking
   void SetPlanarConfiguration(unsigned int pc);
 
+  /// INTERNAL do not use
   bool GetNeedByteSwap() const
     {
     return NeedByteSwap;
@@ -121,7 +122,7 @@ public:
   const PhotometricInterpretation &GetPhotometricInterpretation() const;
   void SetPhotometricInterpretation(PhotometricInterpretation const &pi);
 
-  bool IsEmpty() const { return Dimensions.size() == 0; }
+  bool IsEmpty() const { return Dimensions.empty(); }
   void Clear();
 
   /// Return the length of the image after decompression
@@ -129,7 +130,7 @@ public:
   /// thus you need to multiply this length by 3 if computing the size of equivalent RGB image
   unsigned long GetBufferLength() const;
 
-  /// Acces the raw data
+  /// Access the raw data
   bool GetBuffer(char *buffer) const;
 
   /// Return whether or not the image was compressed using a lossy compressor or not
@@ -173,7 +174,7 @@ protected:
   typedef SmartPointer<LookupTable> LUTPtr;
   LUTPtr LUT;
   // I believe the following 3 ivars can be derived from TS ...
-  bool NeedByteSwap;
+  bool NeedByteSwap; // FIXME: remove me
   bool LossyFlag;
 
 private:

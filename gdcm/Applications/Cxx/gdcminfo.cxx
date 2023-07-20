@@ -105,22 +105,22 @@ static int checkdeflated(const char *name)
     return 1;
     }
   in = fopen(name, "r");
-  if (in == NULL)
+  if (in == nullptr)
     {
     fprintf( stderr, "in is NULL\n" );
     return 1;
     }
   buf = (unsigned char*)malloc(size);
-  if (buf != NULL && (size1 = (unsigned long)fread(buf, 1, size, in)) != size) {
+  if (buf != nullptr && (size1 = (unsigned long)fread(buf, 1, size, in)) != size) {
     free(buf);
-    buf = NULL;
+    buf = nullptr;
     fprintf( stderr, "could not fread: %lu bytes != %lu\n", size, size1 );
     fprintf( stderr, "feof: %i ferror %i\n", feof(in), ferror(in) );
   }
   fclose(in);
   len = size;
   source = buf;
-  if( source == NULL ) {
+  if( source == nullptr ) {
     fprintf( stderr, "source is NULL\n" );
     return 1;
   }
@@ -172,7 +172,7 @@ static int checkdeflated(const char *name)
     printf( "deflate stream has proper length: %lu\n", len );
     }
 
-  ret = puff(NULL, &destlen, source, &sourcelen);
+  ret = puff(nullptr, &destlen, source, &sourcelen);
 
   if (ret)
     fprintf(stdout,"puff() failed with return code %d\n", ret);
@@ -196,13 +196,17 @@ static std::string getInfoDate(Dict *infoDict, const char *key)
   std::string out;
 
 #ifdef LIBPOPPLER_NEW_OBJECT_API
-  if ((obj = infoDict->lookup((char*)key)).isString())
+  if ((obj = infoDict->lookup(const_cast<char*>(key))).isString())
 #else
   if (infoDict->lookup((char*)key, &obj)->isString())
 #endif
     {
     const GooString* gs = obj.getString();
+#ifdef LIBPOPPLER_GOOSTRING_HAS_GETCSTRING
     s = gs->getCString();
+#else
+    s = gs->c_str();
+#endif
     if (s[0] == 'D' && s[1] == ':')
       {
       s += 2;
@@ -212,11 +216,11 @@ static std::string getInfoDate(Dict *infoDict, const char *key)
       {
       switch (n)
         {
-      case 1: mon = 1;
-      case 2: day = 1;
-      case 3: hour = 0;
-      case 4: min = 0;
-      case 5: sec = 0;
+      case 1: mon = 1;  /* fall through */
+      case 2: day = 1;  /* fall through */
+      case 3: hour = 0; /* fall through */
+      case 4: min = 0;  /* fall through */
+      case 5: sec = 0;  /* fall through */
         }
       tmStruct.tm_year = year - 1900;
       tmStruct.tm_mon = mon - 1;
@@ -254,10 +258,18 @@ static std::string getInfoDate(Dict *infoDict, const char *key)
   return out;
 }
 
+#ifdef LIBPOPPLER_UNICODEMAP_HAS_CONSTMAPUNICODE
+static std::string getInfoString(Dict *infoDict, const char *key, const UnicodeMap *uMap)
+#else
 static std::string getInfoString(Dict *infoDict, const char *key, UnicodeMap *uMap)
+#endif
 {
   Object obj;
+#ifdef LIBPOPPLER_GOOSTRING_HAS_CONSTGETCHAR
   const GooString *s1;
+#else
+  GooString *s1;
+#endif
   bool isUnicode;
   Unicode u;
   char buf[8];
@@ -265,7 +277,7 @@ static std::string getInfoString(Dict *infoDict, const char *key, UnicodeMap *uM
   std::string out;
 
 #ifdef LIBPOPPLER_NEW_OBJECT_API
-  if ((obj = infoDict->lookup((char*)key)).isString())
+  if ((obj = infoDict->lookup(const_cast<char*>(key))).isString())
 #else
   if (infoDict->lookup((char*)key, &obj)->isString())
 #endif
@@ -400,7 +412,7 @@ static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs
       return 1;
       }
     gdcm::SplitMosaicFilter filter;
-    const gdcm::Image *pimage = NULL;
+    const gdcm::Image *pimage = nullptr;
     const gdcm::Image &image = reader.GetImage();
     if( mosaic )
     {
@@ -479,15 +491,19 @@ static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs
 
     MemStream *appearStream;
 
-    appearStream = new MemStream((char*)bv->GetPointer(), 0,
+    appearStream = new MemStream(const_cast<char*>(bv->GetPointer()), 0,
 #ifdef LIBPOPPLER_NEW_OBJECT_API
       bv->GetLength(), std::move(appearDict));
 #else
       bv->GetLength(), &appearDict);
 #endif
+#ifdef LIBPOPPLER_PDFDOC_HAS_OPTIONAL
+    std::optional<GooString> ownerPW, userPW;
+#else
     GooString *ownerPW, *userPW;
     ownerPW = NULL;
     userPW = NULL;
+#endif
 
     PDFDoc *doc;
     doc = new PDFDoc(appearStream, ownerPW, userPW);
@@ -501,11 +517,19 @@ static int ProcessOneFile( std::string const & filename, gdcm::Defs const & defs
     std::string creationdate;
     std::string moddate;
 
+#ifdef LIBPOPPLER_UNICODEMAP_HAS_CONSTMAPUNICODE
+    const UnicodeMap *uMap;
+#else
     UnicodeMap *uMap;
+#endif
 #ifdef LIBPOPPLER_GLOBALPARAMS_CSTOR_HAS_PARAM
     globalParams = new GlobalParams(0);
 #else
+#ifdef LIBPOPPLER_GLOBALPARAMS_HAS_RESET
+    globalParams.reset(new GlobalParams());
+#else
     globalParams = new GlobalParams();
+#endif
 #endif
     uMap = globalParams->getTextEncoding();
 
@@ -608,10 +632,10 @@ int main(int argc, char *argv[])
   int version = 0;
   int debug = 0;
   int error = 0;
-  while (1) {
+  while (true) {
     int option_index = 0;
     static struct option long_options[] = {
-        {"input", 1, 0, 0},
+        {"input", 1, nullptr, 0},
         {"recursive", 0, &recursive, 1},
         {"check-deflated", 0, &deflated, 1},
         {"resources-path", 0, &resourcespath, 1},
@@ -627,7 +651,7 @@ int main(int argc, char *argv[])
         {"error", 0, &error, 1},
         {"help", 0, &help, 1},
         {"version", 0, &version, 1},
-        {0, 0, 0, 0} // required
+        {nullptr, 0, nullptr, 0} // required
     };
     static const char short_options[] = "i:rdVWDEhv";
     c = getopt_long (argc, argv, short_options,

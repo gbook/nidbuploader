@@ -22,7 +22,7 @@ namespace gdcm
 
 /**
  * \brief Class to do handle the crypto factory
- * \details GDCM needs to access in a platform independant way
+ * \details GDCM needs to access in a platform independent way
  * the user specified crypto engine. It can be:
  * \li CAPI (windows only)
  * \li OPENSSL (portable)
@@ -62,8 +62,8 @@ private:
   }
 
 protected:
-  CryptoFactory(){}
-  ~CryptoFactory(){}
+  CryptoFactory()= default;
+  ~CryptoFactory()= default;
 };
 
 } // end namespace gdcm

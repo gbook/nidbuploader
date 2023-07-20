@@ -27,7 +27,7 @@ namespace gdcm
  * \brief Class for manipulation directories
  *
  * \note This implementation provide a cross platform implementation
- * for manipulating directores: basically traversing directories
+ * for manipulating directories: basically traversing directories
  * and harvesting files
  *
  * \note
@@ -43,8 +43,8 @@ class GDCM_EXPORT Directory
 {
   friend std::ostream& operator<<(std::ostream &_os, const Directory &d);
 public :
-  Directory() {}
-  ~Directory() {}
+  Directory() = default;
+  ~Directory() = default;
   typedef std::string FilenameType;
   typedef std::vector<FilenameType> FilenamesType;
 

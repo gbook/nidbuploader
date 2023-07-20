@@ -46,12 +46,12 @@ public:
   //ConstIterator End() const { return ModuleInternal.end(); }
   //Iterator End() { return ModuleInternal.end(); }
 
-  Macro() {}
+  Macro() = default;
   friend std::ostream& operator<<(std::ostream& _os, const Macro&_val);
 
   void Clear() { ModuleInternal.clear(); }
 
-  /// Will add a ModuleEntry direcly at root-level. See Macro for nested-included level.
+  /// Will add a ModuleEntry directly at root-level. See Macro for nested-included level.
   void AddMacroEntry(const Tag& tag, const MacroEntry & module)
     {
     ModuleInternal.insert(

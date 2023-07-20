@@ -31,14 +31,17 @@ set(CMAKE_SWIG_OUTDIR "${GDCM_JAVA_HOME}")
 set(CMAKE_SWIG_FLAGS "-package gdcm")
 separate_arguments(CMAKE_SWIG_FLAGS)
 # http://www.debian.org/doc/packaging-manuals/java-policy/x105.html
-SWIG_ADD_MODULE(gdcmjni java gdcm.i)
-SWIG_LINK_LIBRARIES(gdcmjni gdcmMSFF
+SWIG_ADD_LIBRARY(
+  gdcmjni
+  LANGUAGE java
+  SOURCES gdcm.i
+)
+SWIG_LINK_LIBRARIES(gdcmjni LINK_PRIVATE gdcmMSFF
   gdcmMEXD
   # There is no real point in linking explicitly to jni libraries. This is a java module
   # it could contains undefined symbols after all.
   #${JNI_LIBRARIES}
 )
-set_target_properties(${SWIG_MODULE_gdcmjni_REAL_NAME} PROPERTIES LINK_INTERFACE_LIBRARIES "")
 if (WIN32)
   # disable lib prefix on windows with mingw
   set_target_properties(${SWIG_MODULE_gdcmjni_REAL_NAME} PROPERTIES PREFIX "")
@@ -125,7 +128,7 @@ add_custom_target(GDCMJavaJar ALL
 if(NOT GDCM_INSTALL_NO_LIBRARIES)
   install_swig_module(gdcmjni Java)
   set(GDCM_LIBRARY_DIR2 ${LIBRARY_OUTPUT_PATH}/\${BUILD_TYPE})
-  # because gdcm.jar is constructed with custom commands, it need the INSTALL(FILES signature:
+  # because gdcm.jar is constructed with custom commands, it need the install(FILES signature:
   install(FILES ${GDCM_LIBRARY_DIR2}/gdcm.jar
     DESTINATION ${GDCM_INSTALL_JARMODULE_DIR} COMPONENT JavaModule
   )

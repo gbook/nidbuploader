@@ -87,8 +87,7 @@ static Tag BasicApplicationLevelConfidentialityProfileAttributes[] = {
 
 
 Anonymizer::~Anonymizer()
-{
-}
+= default;
 
 bool Anonymizer::Empty( Tag const &t)
 {
@@ -226,7 +225,7 @@ bool Anonymizer::Replace( Tag const &t, const char *value, VL const & vl )
       }
     else
       {
-      // vr from dict seems to be ascii, so it seems resonable to write a ByteValue here:
+      // vr from dict seems to be ascii, so it seems reasonable to write a ByteValue here:
       assert( dictentry.GetVR() & VR::VRASCII );
       if( value )
         {
@@ -466,7 +465,7 @@ bool Anonymizer::CheckIfSequenceContainsAttributeToAnonymize(File const &file, S
       {
       const DataElement &de = *it;
       VR vr = DataSetHelper::ComputeVR(file, nested, de.GetTag() );
-      SmartPointer<SequenceOfItems> sqi2 = 0;
+      SmartPointer<SequenceOfItems> sqi2 = nullptr;
       if( vr == VR::SQ )
         {
         sqi2 = de.GetValueAsSQ();
@@ -503,11 +502,20 @@ bool Anonymizer::BasicApplicationLevelConfidentialityProfile1()
   //p7.SetCertificate( this->x509 );
 
   DataSet &ds = F->GetDataSet();
+  if( ds.FindDataElement( Tag(0x0012,0x0062) ) )
+    {
+    gdcm::Attribute<0x0012,0x0062> patientIdentityRemoved = {};
+    patientIdentityRemoved.SetFromDataSet( ds );
+    const std::string value = patientIdentityRemoved.GetValue().Trim();
+    if( value != "NO" ) {
+      gdcmErrorMacro( "EncryptedContentTransferSyntax Attribute Patient is set !" );
+      return false;
+    }
+    }
   if(  ds.FindDataElement( Tag(0x0400,0x0500) )
-    || ds.FindDataElement( Tag(0x0012,0x0062) )
     || ds.FindDataElement( Tag(0x0012,0x0063) ) )
     {
-    gdcmDebugMacro( "EncryptedContentTransferSyntax Attribute is present !" );
+    gdcmErrorMacro( "EncryptedContentTransferSyntax Attribute is present !" );
     return false;
     }
 #if 0
@@ -558,7 +566,7 @@ bool Anonymizer::BasicApplicationLevelConfidentialityProfile1()
     {
     const DataElement &de = *it;
     //const SequenceOfItems *sqi = de.GetSequenceOfItems();
-    SmartPointer<SequenceOfItems> sqi = 0;
+    SmartPointer<SequenceOfItems> sqi = nullptr;
     VR vr = DataSetHelper::ComputeVR(*F, ds, de.GetTag() );
     if( vr == VR::SQ )
       {
@@ -744,7 +752,7 @@ catch(...)
 }
 
 
-bool IsVRUI(Tag const &tag)
+static bool IsVRUI(Tag const &tag)
 {
   static const Global &g = Global::GetInstance();
   static const Dicts &dicts = g.GetDicts();
@@ -926,6 +934,11 @@ void Anonymizer::RecurseDataSet( DataSet & ds )
 
   static const Global &g = Global::GetInstance();
   static const Defs &defs = g.GetDefs();
+  if( defs.IsEmpty() )
+  {
+    gdcmWarningMacro( "Missing Definitions, see Global.LoadResourcesFiles()" );
+    return;
+  }
   const IOD& iod = defs.GetIODFromFile(*F);
 
   for(const Tag *ptr = start ; ptr != end ; ++ptr)
@@ -945,7 +958,7 @@ void Anonymizer::RecurseDataSet( DataSet & ds )
     DataElement de = *it; ++it;
     //const SequenceOfItems *sqi = de.GetSequenceOfItems();
     VR vr = DataSetHelper::ComputeVR(*F, ds, de.GetTag() );
-    SmartPointer<SequenceOfItems> sqi = 0;
+    SmartPointer<SequenceOfItems> sqi = nullptr;
     if( vr == VR::SQ )
       {
       sqi = de.GetValueAsSQ();

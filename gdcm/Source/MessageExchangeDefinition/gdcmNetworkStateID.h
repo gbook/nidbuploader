@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ namespace gdcm {
 
     const int cMaxStateID = 13;
 
-    //the transition table is built on state indeces
+    //the transition table is built on state indices
     //this function will produce the index from the power-of-two EStateID
     inline int GetStateIndex(EStateID inState){
       switch (inState){

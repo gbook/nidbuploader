@@ -76,11 +76,11 @@ int main(int argc, char *argv[])
   int descriptor = 0;
   std::string descriptor_str;
   std::string root;
-  while (1) {
+  while (true) {
     int option_index = 0;
     static struct option long_options[] = {
-        {"input", 1, 0, 0},
-        {"output", 1, 0, 0},                // o
+        {"input", 1, nullptr, 0},
+        {"output", 1, nullptr, 0},                // o
         {"recursive", 0, &recursive, 1},
         {"root-uid", 1, &rootuid, 1}, // specific Root (not GDCM)
         {"resources-path", 1, &resourcespath, 1},
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
         {"error", 0, &error, 1},
         {"help", 0, &help, 1},
         {"version", 0, &version, 1},
-        {0, 0, 0, 0} // required
+        {nullptr, 0, nullptr, 0} // required
     };
     static const char short_options[] = "i:o:rVWDEhv";
     c = getopt_long (argc, argv, short_options,
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
     while (optind < argc)
       {
       //printf ("%s\n", argv[optind++]);
-      files.push_back( argv[optind++] );
+      files.emplace_back(argv[optind++] );
       }
     //printf ("\n");
     if( files.size() >= 2

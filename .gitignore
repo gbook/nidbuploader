@@ -1,2 +1,13 @@
 gdcm-win7
 /NiDBUploader.pro.user
+gdcmbin
+release
+debug
+/.qmake.stash
+/connections.txt
+/idmap.log
+/Makefile
+/Makefile.Debug
+/Makefile.Release
+/output.log
+/transactions.csv

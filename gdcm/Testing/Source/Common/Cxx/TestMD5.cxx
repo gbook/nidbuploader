@@ -223,7 +223,7 @@ static const char * const gdcmMD5SumFiles[][2] = {
 { "64528209839b0369c2da530249f4ca58"  , "TOSHIBA_J2K_SIZ1_PixRep0.dcm" },
 { "2498ca4aaf62991c8a1f629a804bfa44"  , "TOSHIBA_J2K_OpenJPEGv2Regression.dcm" },
 { "e4d559b6db04679b54bea40c763b09e4"  , "TOSHIBA_J2K_SIZ0_PixRep1.dcm" },
-{ "58ab110be40303952e05d50e64823192"  , "NM-PAL-16-PixRep1.dcm" },
+{ "3d4d7a22442b21477dfc3ba8ac6cac06"  , "NM-PAL-16-PixRep1.dcm" },
 { "deb7e4ee592efca5d475aaa6fab06459"  , "MEDILABInvalidCP246_EVRLESQasUN.dcm" },
 { "52f727de4f831ff2bae850fdd8b1413a"  , "JPEGInvalidSecondFrag.dcm" },
 { "027faefc8031768dad1afc100f7aee27"  , "SC16BitsAllocated_8BitsStoredJ2K.dcm" },
@@ -239,8 +239,17 @@ static const char * const gdcmMD5SumFiles[][2] = {
 { "299df0175ea4d3ab1f02651f88ffe9f3" , "JPEG_LS_InvalidEscapeSequence_COM_padding.dcm" },
 { "9add5fd3c83cc0946633e792f448f732" , "LengthOfItemLarger.dcm" },
 { "b9fdef839a6b6ab33486bfd6b35de3a8" , "GE_MR_0025xx1bProtocolDataBlockXML.dcm" },
+{ "fd6ba97f247f5b8ef70f407f5c1b5f11" , "EmptyIcon_Bug417.dcm" },
+{ "271d71dde59c0cad76baab36c909a43a" , "EnhancedWithIPPPerFrameIOPShared.dcm" },
+{ "2fd5ad3e9265861be43b6a341314cc52" , "FUJI-ffff-MONO1-J2K.dcm" },
+{ "69648b9be35a621e9e5b447df656ab18" , "JPEGLosslessSeNonZero.dcm" },
+{ "c0ee318130c0fcf35b0f57670a8f1e0d" , "US-YBR_FULL_422-EVRLE.dcm" },
+{ "3d873e4c19bf5513959c6cc1a184e2df" , "Osirix10vs8BitsStored.dcm" },
+{ "5141fe286ad2e39259dac231e3d10b41" , "Bug_Siemens_PrivateIconNoItem.dcm" },
+{ "3155af485dc3f490cc9e212f95499615" , "HardcopyColor_YBR_RCT_J2K_PC1.dcm" },
+{ "ab93bd11ce0f48e2e9e1c700df160a30" , "PET-GE-dicomwrite-PixelDataSQUNv2.dcm" },
 
-{ NULL, NULL}
+{ nullptr, nullptr}
 };
 
 int TestMD5Func(const char* filename, const char *md5ref, bool verbose = false)
@@ -275,7 +284,7 @@ int TestMD5Func(const char* filename, const char *md5ref, bool verbose = false)
 
 static const char *GetMD5Sum(const char *filename)
 {
-  typedef const char * const (*md5pair)[2];
+  using md5pair = const char *const (*)[2];
   const char *md5filename;
   md5pair md5filenames = gdcmMD5SumFiles;
   int i = 0;
@@ -289,7 +298,7 @@ static const char *GetMD5Sum(const char *filename)
     ++i;
     }
   std::cerr << "Missing Md5 for: " << filename << std::endl;
-  return 0;
+  return nullptr;
 }
 
 int TestMD5(int argc, char *argv[])

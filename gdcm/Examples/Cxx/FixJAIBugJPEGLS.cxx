@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     }
 
 //  unsigned long totalLen = sf->ComputeByteLength();
-  std::vector<BYTE> rgbyteOutall;
+  std::vector<unsigned char> rgbyteOutall;
   for(unsigned int i = 0; i < sf->GetNumberOfFragments(); ++i)
     {
     const gdcm::Fragment &frag = sf->GetFragment(i);
@@ -90,22 +90,23 @@ int main(int argc, char *argv[])
     vbuffer.resize( totalLen );
     char *buffer = &vbuffer[0];
     bv->GetBuffer(buffer, totalLen);
-    const BYTE* pbyteCompressed0 = (const BYTE*)buffer;
+    const unsigned char* pbyteCompressed0 = (const unsigned char*)buffer;
     while( totalLen > 0 && pbyteCompressed0[totalLen-1] != 0xd9 )
       {
       totalLen--;
       }
 
     JlsParameters metadata;
-    if (JpegLsReadHeader(buffer, totalLen, &metadata) != OK)
+    char errorMsg[256+1]={'\0'};
+    if (JpegLsReadHeader(buffer, totalLen, &metadata, errorMsg) != charls::ApiResult::OK)
       {
-      std::cerr << "Cant parse jpegls" << std::endl;
+      std::cerr << "Cant parse jpegls: " << errorMsg << std::endl;
       return 1;
       }
 
     std::cout << metadata.width << std::endl;
     std::cout << metadata.height << std::endl;
-    std::cout << metadata.bitspersample << std::endl;
+    std::cout << metadata.bitsPerSample << std::endl;
 
     gdcm::PixelFormat const & pf = image.GetPixelFormat();
     std::cout << pf << std::endl;
@@ -151,8 +152,8 @@ int main(int argc, char *argv[])
       0x00, 0x40
     };
 
-    const unsigned char *marker_lse = NULL;
-    switch( metadata.bitspersample )
+    const unsigned char *marker_lse = nullptr;
+    switch( metadata.bitsPerSample )
       {
     case 13:
       marker_lse = marker_lse_13;
@@ -169,7 +170,7 @@ int main(int argc, char *argv[])
       }
     if( !marker_lse )
       {
-      std::cerr << "Cant handle: " << metadata.bitspersample << std::endl;
+      std::cerr << "Cant handle: " << metadata.bitsPerSample << std::endl;
       return 1;
       }
 
@@ -186,18 +187,18 @@ int main(int argc, char *argv[])
     size_t cbyteCompressed = vbuffer.size(); // updated legnth
 
     JlsParameters params;
-    JpegLsReadHeader(pbyteCompressed, cbyteCompressed, &params);
+    JpegLsReadHeader(pbyteCompressed, cbyteCompressed, &params, nullptr);
 
-    std::vector<BYTE> rgbyteOut;
+    std::vector<unsigned char> rgbyteOut;
     //rgbyteOut.resize( image.GetBufferLength() );
-    rgbyteOut.resize(params.height *params.width * ((params.bitspersample + 7)
+    rgbyteOut.resize(params.height *params.width * ((params.bitsPerSample + 7)
         / 8) * params.components);
 
-    JLS_ERROR result =
-      JpegLsDecode(&rgbyteOut[0], rgbyteOut.size(), pbyteCompressed, cbyteCompressed, &params );
-    if (result != OK)
+    CharlsApiResultType result =
+      JpegLsDecode(&rgbyteOut[0], rgbyteOut.size(), pbyteCompressed, cbyteCompressed, &params, errorMsg );
+    if (result != charls::ApiResult::OK)
       {
-      std::cerr << "Could not patch JAI-JPEGLS" << std::endl;
+      std::cerr << "Could not patch JAI-JPEGLS: " << errorMsg << std::endl;
       return 1;
       }
     rgbyteOutall.insert( rgbyteOutall.end(), rgbyteOut.begin(), rgbyteOut.end() );

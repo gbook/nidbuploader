@@ -35,6 +35,7 @@ set(EXAMPLES_SRCS
   PrintLUT
   EmptyMask
   DumpSiemensBase64
+  DumpVisusChange
   TemplateEmptyImage
   MakeTemplate
   DeriveSeries
@@ -47,6 +48,7 @@ set(EXAMPLES_SRCS
   CreateJPIPDataSet
   DumpADAC
   DumpToshibaDTI
+  DumpToshibaDTI2
   DumpImageHeaderInfo
   ReadMultiTimesException
   pmsct_rgb1

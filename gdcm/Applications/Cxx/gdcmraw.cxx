@@ -90,13 +90,13 @@ int main(int argc, char *argv[])
   int error = 0;
   int help = 0;
   int version = 0;
-  while (1) {
+  while (true) {
     //int this_option_optind = optind ? optind : 1;
     int option_index = 0;
     static struct option long_options[] = {
-        {"input", 1, 0, 0},                 // i
-        {"output", 1, 0, 0},                // o
-        {"tag", 1, 0, 0},                   // t
+        {"input", 1, nullptr, 0},                 // i
+        {"output", 1, nullptr, 0},                // o
+        {"tag", 1, nullptr, 0},                   // t
         {"split-frags", 0, &splitfrags, 1}, // f
 /*
  * pixel-data flag is important for image like DermaColorLossLess.dcm since the bytevalue is
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
  * would expect
  */
         {"pixel-data", 0, &pixeldata, 1},   // P
-        {"pattern", 1, 0, 0},               // p
+        {"pattern", 1, nullptr, 0},               // p
 
         {"verbose", 0, &verbose, 1},
         {"warning", 0, &warning, 1},
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
         {"help", 0, &help, 1},
         {"version", 0, &version, 1},
 
-        {0, 0, 0, 0}
+        {nullptr, 0, nullptr, 0}
     };
 
     c = getopt_long (argc, argv, "i:o:t:Sp:PVWDEhv",
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
     while (optind < argc)
       {
       //printf ("%s\n", argv[optind++]);
-      files.push_back( argv[optind++] );
+      files.emplace_back(argv[optind++] );
       }
     //printf ("\n");
     if( files.size() == 2

@@ -61,7 +61,7 @@ class Scanner;
 /**
  * \brief SerieHelper
  * DO NOT USE this class, it is only a temporary solution for ITK migration from GDCM 1.x to GDCM 2.x
- * It will disapear soon, you've been warned.
+ * It will disappear soon, you've been warned.
  *
  * Instead see ImageHelper or IPPSorter
  */
@@ -90,14 +90,15 @@ protected:
   bool AddFile(FileWithName &header);
   void AddRestriction(const Tag& tag);
   bool ImagePositionPatientOrdering(FileList *fileSet);
+  bool ImageNumberOrdering( FileList *fileList );
   bool FileNameOrdering( FileList *fileList );
 
-  typedef struct {
+  using Rule = struct RuleStructure{
     uint16_t group;
     uint16_t elem;
     std::string value;
     int op;
-  } Rule;
+  };
   typedef std::vector<Rule> SerieRestrictions;
 
   typedef std::map<std::string, FileList *> SingleSerieUIDFileSetmap;

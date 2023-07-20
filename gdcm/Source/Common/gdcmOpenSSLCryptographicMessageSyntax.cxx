@@ -97,7 +97,7 @@ bool OpenSSLCryptographicMessageSyntax::Encrypt(char *output, size_t &outlen, co
     goto err;
     }
 
-  in = BIO_new_mem_buf((void*)array, (int)len);
+  in = BIO_new_mem_buf((const void*)array, (int)len);
   if(!in)
     {
     gdcmErrorMacro( "Error at creating the input memory buffer." );
@@ -115,7 +115,7 @@ bool OpenSSLCryptographicMessageSyntax::Encrypt(char *output, size_t &outlen, co
   cms = CMS_encrypt(recips, in, internalCipherType, flags);
   if (!cms)
     {
-    gdcmErrorMacro( "Error at creating the CMS strucutre." );
+    gdcmErrorMacro( "Error at creating the CMS structure." );
     goto err;
     }
 
@@ -183,7 +183,7 @@ bool OpenSSLCryptographicMessageSyntax::Decrypt(char *output, size_t &outlen, co
     goto err;
     }
 
-  in = BIO_new_mem_buf((void*)array, (int)len);
+  in = BIO_new_mem_buf((const void*)array, (int)len);
   if (!in)
     {
     gdcmErrorMacro( "Error at creating the input memory buffer." );
@@ -288,6 +288,7 @@ bool OpenSSLCryptographicMessageSyntax::ParseCertificateFile( const char *keyfil
     }
   ::BIO_free(in); in = NULL;
   ::sk_X509_push(recips, x509);
+  //::X509_free(x509);
   return true;
 }
 

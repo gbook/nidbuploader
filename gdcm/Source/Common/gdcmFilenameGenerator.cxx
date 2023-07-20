@@ -15,8 +15,8 @@
 #include "gdcmTrace.h"
 
 #include <cstring> // strchr
-#include <stdio.h> // snprintf
-#ifdef _WIN32
+#include <cstdio> // snprintf
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
 #define snprintf _snprintf
 #endif
 
@@ -40,7 +40,7 @@ const char * FilenameGenerator::GetFilename(SizeType n) const
 {
   if( n < Filenames.size() )
     return Filenames[n].c_str();
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -84,7 +84,7 @@ bool FilenameGenerator::Generate()
     if ( num_percent != 1 )
       {
       // Bug: what if someone wants to output file such as %%%02 ... oh well
-      gdcmDebugMacro( "No more than one % in string formating please" );
+      gdcmDebugMacro( "No more than one % in string formatting please" );
       return false;
       }
     bool success = true;

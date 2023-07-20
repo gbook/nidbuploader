@@ -37,8 +37,7 @@ TagPath::TagPath():Path()
 }
 
 TagPath::~TagPath()
-{
-}
+= default;
 
 void TagPath::Print(std::ostream &os) const
 {
@@ -74,7 +73,7 @@ bool TagPath::ConstructFromTagList(Tag const *l, unsigned int n)
     Path.push_back( l[i] );
     if( i+1 < n )
       {
-      Path.push_back( 0 );
+      Path.emplace_back(0 );
       }
     }
   return true;
@@ -121,7 +120,7 @@ bool TagPath::ConstructFromString(const char *path)
         pos++;
         Path.push_back( t );
         }
-      else if( sscanf(path+pos, "%d/", &value) == 1 )
+      else if( sscanf(path+pos, "%u/", &value) == 1 )
         {
         }
       }
@@ -146,7 +145,7 @@ bool TagPath::Push(unsigned int itemnum)
 {
   if( Path.size() % 2 == 1 )
     {
-    Path.push_back( itemnum );
+    Path.emplace_back(itemnum );
     return true;
     }
   return false;

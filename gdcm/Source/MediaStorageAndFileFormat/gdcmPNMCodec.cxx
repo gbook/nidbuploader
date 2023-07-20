@@ -26,8 +26,7 @@ PNMCodec::PNMCodec():BufferLength(0)
 }
 
 PNMCodec::~PNMCodec()
-{
-}
+= default;
 
 bool PNMCodec::CanDecode(TransferSyntax const &) const
 {
@@ -387,7 +386,7 @@ bool PNMCodec::GetHeaderInfo(std::istream &is, TransferSyntax &ts)
 
 ImageCodec * PNMCodec::Clone() const
 {
-  return NULL;
+  return nullptr;
 }
 
 } // end namespace gdcm

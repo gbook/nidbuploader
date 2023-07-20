@@ -40,7 +40,9 @@ public:
   /// - hostname = localhost
   /// - port = 104
   ServiceClassUser();
-  ~ServiceClassUser();
+  ~ServiceClassUser() override;
+  ServiceClassUser(const ServiceClassUser&) = delete;
+  void operator=(const ServiceClassUser &) = delete;
 
   /// Set the name of the called hostname (hostname or IP address)
   void SetHostname( const char *hostname );
@@ -101,7 +103,7 @@ public:
   /// Execute a C-MOVE, based on query, returned Files are stored in vector
   bool SendMove(const BaseRootQuery* query, std::vector<File> &retFile);
 
-  /// for wrapped language: instanciate a reference counted object
+  /// for wrapped language: instantiate a reference counted object
   static SmartPointer<ServiceClassUser> New() { return new ServiceClassUser; }
 
 private:
@@ -110,10 +112,6 @@ private:
     network::ULConnectionCallback* inCallback, const bool& startWaiting);
   network::EStateID RunMoveEventLoop(network::ULEvent& inEvent,
     network::ULConnectionCallback* inCallback);
-
-private:
-  ServiceClassUser(const ServiceClassUser&);
-  void operator=(const ServiceClassUser &);
 
 private:
   ServiceClassUserInternals *Internals;

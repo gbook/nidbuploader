@@ -115,6 +115,9 @@ namespace gdcm
 {"1.2.840.10008.5.1.4.1.1.2.2", "Legacy Converted Enhanced CT Image IOD Modules"},
 {"1.2.840.10008.5.1.4.1.1.4.4", "Legacy Converted Enhanced MR Image IOD Modules"},
 {"1.2.840.10008.5.1.4.1.1.128.1", "Legacy Converted Enhanced PET Image IOD Modules"},
+{"1.2.840.10008.5.1.4.1.1.13.1.4" , "Breast Projection X-Ray Image - For Presentation Image IOD Modules"},
+{"1.2.840.10008.5.1.4.1.1.13.1.5" , "Breast Projection X-Ray Image - For Processing Image IOD Modules"},
+
 // Deprecated:
 {"1.2.840.10008.3.1.2.3.3" , "Modality Performed Procedure Step IOD Modules" },
 {"1.2.840.10008.5.1.4.1.1.5" , "NM Image IOD Modules"},
@@ -123,8 +126,10 @@ namespace gdcm
 {"1.2.840.10008.5.1.4.1.1.12.3" , ""}, // XRayAngiographicBiplaneImageStorage
 // private:
 { "1.3.12.2.1107.5.9.1" , "Siemens Non-image IOD Modules"}, // CSA Non-Image Storage
+{ "1.2.392.200036.9125.1.1.2" , "Fuji Private CR Image IOD Modules"}, // 
+{ "1.2.392.200036.9125.1.1.4" , "Fuji Private Mammo CR Image IOD Modules"}, // 
 
-{ 0, 0 }
+{ nullptr, nullptr }
 };
 
 unsigned int SOPClassUIDToIOD::GetNumberOfSOPClassToIOD()
@@ -183,18 +188,18 @@ SOPClassUIDToIOD::SOPClassUIDToIODType& SOPClassUIDToIOD::GetSOPClassUIDToIOD(un
   if( i < SOPClassUIDToIOD::GetNumberOfSOPClassToIOD() )
     return SOPClassUIDToIODStrings[i];
   // else return the {0x0, 0x0} sentinel:
-  assert( *SOPClassUIDToIODStrings[ SOPClassUIDToIOD::GetNumberOfSOPClassToIOD() ] == 0 );
+  assert( *SOPClassUIDToIODStrings[ SOPClassUIDToIOD::GetNumberOfSOPClassToIOD() ] == nullptr );
   return SOPClassUIDToIODStrings[ SOPClassUIDToIOD::GetNumberOfSOPClassToIOD() ];
 
 }
 
 const char *SOPClassUIDToIOD::GetSOPClassUIDFromIOD(const char *iod)
 {
-  if(!iod) return NULL;
+  if(!iod) return nullptr;
   unsigned int i = 0;
   SOPClassUIDToIODType *sopclassuidtoiods = GetSOPClassUIDToIODs();
   const char *p = sopclassuidtoiods[i][1];
-  while( p != 0 )
+  while( p != nullptr )
     {
     if( strcmp( iod, p ) == 0 )
       {
@@ -210,11 +215,11 @@ const char *SOPClassUIDToIOD::GetSOPClassUIDFromIOD(const char *iod)
 
 const char *SOPClassUIDToIOD::GetIODFromSOPClassUID(const char *sopclassuid)
 {
-  if(!sopclassuid) return NULL;
+  if(!sopclassuid) return nullptr;
   unsigned int i = 0;
   SOPClassUIDToIODType *sopclassuidtoiods = GetSOPClassUIDToIODs();
   const char *p = sopclassuidtoiods[i][0];
-  while( p != 0 )
+  while( p != nullptr )
     {
     if( strcmp( sopclassuid, p ) == 0 )
       {

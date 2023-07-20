@@ -83,7 +83,7 @@ static const char *TSStrings[] = {
   "1.2.840.10008.1.2.4.103",
   // Unknown
   "Unknown Transfer Syntax", // Pretty sure we never use this case...
-  0 // Compilers have no obligation to finish by NULL, do it ourself
+  nullptr // Compilers have no obligation to finish by NULL, do it ourself
 };
 
 TransferSyntax::TSType TransferSyntax::GetTSType(const char *cstr)
@@ -99,7 +99,7 @@ TransferSyntax::TSType TransferSyntax::GetTSType(const char *cstr)
     }
 
   int i = 0;
-  while(TSStrings[i] != 0)
+  while(TSStrings[i] != nullptr)
   //while(TransferSyntaxStrings[i] != 0)
     {
     if( str == TSStrings[i] )
@@ -175,7 +175,7 @@ bool TransferSyntax::IsLossy() const
 // transfer syntax.  If you use the JPEG compression algorithm (ITU-T T.81,
 // ISO/IEC IS 10918-1), You will not be able to declare a lossy compress pixel
 // data using JPEGLosslessProcess14_1 For the same reason using J2K (ITU-T
-// T.800, ISO/IEC IS 15444-1), you shoult not be allowed to stored an
+// T.800, ISO/IEC IS 15444-1), you should not be allowed to stored an
 // irreversible wavelet compressed pixel data in a file declared with transfer
 // syntax JPEG2000Lossless.
 // Same goes for JPEG-LS (ITU-T T.87, ISO/IEC IS 14495-1), and to some extent

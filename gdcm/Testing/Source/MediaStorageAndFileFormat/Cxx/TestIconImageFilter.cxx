@@ -37,6 +37,8 @@ static const char * const iconimagearray[][2] = {
   { "620f0b67a91f7f74151bc5be745b7110" , "MR-SIEMENS-DICOM-WithOverlays-extracted-overlays.dcm" },
   { "938f6ea0bea13ff5c45c7934e603caac" , "US-GE-4AICL142.dcm" },
   { "9c145bbfd00e867d5f9f6efe9651a71e" , "SIEMENS_SYNGO-12-MONO2-LUTWrongLength512.dcm" },
+  { "48bf71ea2e18b0632ec318d55fb455ab" , "Bug_Siemens_PrivateIconNoItem.dcm" },
+  { "a29e9def9a1478c9f8b957c68b33885b" , "PET-GE-dicomwrite-PixelDataSQUNv2.dcm" },
 
   // VEPRO VIF
   { "ea4673b2aa72f477188bac340e115f4c" , "PHILIPS_Gyroscan-12-MONO2-Jpeg_Lossless.dcm" },
@@ -46,7 +48,7 @@ static const char * const iconimagearray[][2] = {
   { "a144b851c9262c97dde567d4d3781733" , "2929J888_8b_YBR_RLE_PlanConf0_breaker.dcm" },
 
   // sentinel
-  { 0, 0 }
+  { nullptr, nullptr }
 };
 
 int TestIconImageFilterFunc(const char *filename, bool verbose = false)
@@ -67,7 +69,7 @@ int TestIconImageFilterFunc(const char *filename, bool verbose = false)
 
   unsigned int i = 0;
   const char *p = iconimagearray[i][1];
-  while( p != 0 )
+  while( p != nullptr )
     {
     if( strcmp( name, p ) == 0 )
       {
@@ -114,7 +116,7 @@ int TestIconImageFilterFunc(const char *filename, bool verbose = false)
     }
   else
     {
-    assert( refmd5 == 0 );
+    assert( refmd5 == nullptr );
     }
 
   return 0;

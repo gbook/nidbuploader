@@ -74,7 +74,7 @@ static const char *PrintResultAsString( uint8_t result )
     return "rejected-transient";
     }
   assert( 0 );
-  return NULL;
+  return nullptr;
 }
 
 static const char *PrintSourceAsString( uint8_t source )
@@ -89,7 +89,7 @@ static const char *PrintSourceAsString( uint8_t source )
     return "DICOM UL service-provider (Presentation related function)";
     }
   assert( 0 );
-  return NULL;
+  return nullptr;
 }
 
 static const char *PrintReasonAsString( uint8_t source, uint8_t reason )
@@ -116,6 +116,7 @@ static const char *PrintReasonAsString( uint8_t source, uint8_t reason )
     case 0xa:
       return "8-10 - reserved";
       }
+    break;
   case 0x2:
     switch( reason )
       {
@@ -124,6 +125,7 @@ static const char *PrintReasonAsString( uint8_t source, uint8_t reason )
     case 0x2:
       return "protocol-version-not-supported";
       }
+    break;
   case 0x3:
     switch( reason )
       {
@@ -142,7 +144,7 @@ static const char *PrintReasonAsString( uint8_t source, uint8_t reason )
       }
     }
   assert( 0 );
-  return NULL;
+  return nullptr;
 }
 
 }

@@ -29,7 +29,7 @@ class GDCM_EXPORT Subject : public Object
 {
 public:
   Subject();
-  ~Subject();
+  ~Subject() override;
 
   /** Allow people to add/remove/invoke observers (callbacks) to any GDCM
    * object. This is an implementation of the subject/observer design
@@ -43,7 +43,7 @@ public:
   unsigned long AddObserver(const Event & event, Command *) const;
 
   /** Get the command associated with the given tag.  NOTE: This returns
-   * a pointer to a Command, but it is safe to asign this to a
+   * a pointer to a Command, but it is safe to assign this to a
    * Command::Pointer.  Since Command inherits from LightObject, at this
    * point in the code, only a pointer or a reference to the Command can
    * be used.   */

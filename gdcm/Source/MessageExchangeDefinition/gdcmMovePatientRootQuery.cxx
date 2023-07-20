@@ -98,8 +98,9 @@ bool MovePatientRootQuery::ValidateQuery(bool inStrict) const
   const DataSet &ds = GetQueryDataSet();
   if (ds.Size() == 0)
     {
-    if (inStrict)
+    if (inStrict) {
       gdcmWarningMacro( "Empty DataSet in ValidateQuery" );
+    }
     return false;
     }
 
@@ -124,7 +125,7 @@ bool MovePatientRootQuery::ValidateQuery(bool inStrict) const
   if (inStrict)
     {
     QueryBase* qb = BaseRootQuery::Construct( ePatientRootType, (EQueryLevel)ilevel );
-    if (qb == NULL)
+    if (qb == nullptr)
       {
       gdcmWarningMacro( "Invalid Query" );
       return false;
@@ -140,7 +141,7 @@ bool MovePatientRootQuery::ValidateQuery(bool inStrict) const
     }
   else //include all previous levels (ie, series gets study and patient, image gets series, study, and patient)
     {
-    QueryBase* qb = NULL;
+    QueryBase* qb = nullptr;
     if (strcmp(theVal.c_str(), "PATIENT ") == 0)
       {
       //make sure remaining tags are somewhere in the list of required, unique, or optional tags
@@ -250,7 +251,7 @@ bool MovePatientRootQuery::ValidateQuery(bool inStrict) const
       }
     if( thePresentTagCount != hiertags.size() )
       {
-      gdcmWarningMacro( "Missing Key found (within the hierachical search ones)" );
+      gdcmWarningMacro( "Missing Key found (within the hierarchical search ones)" );
       theReturn = false;
       }
     }

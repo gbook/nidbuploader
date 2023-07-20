@@ -17,22 +17,10 @@
 /* Use the charls library configured for gdcm.  */
 #include "gdcmTypes.h"
 #ifdef GDCM_USE_SYSTEM_CHARLS
-// It is expected that version 1.1.0 is used
-# include <CharLS/header.h>
-# include <CharLS/interface.h>
-# include <CharLS/util.h>
-# include <CharLS/defaulttraits.h>
-# include <CharLS/losslesstraits.h>
-# include <CharLS/colortransform.h>
-# include <CharLS/processline.h>
+// It is expected that version 2.0.0 is used
+# include <CharLS/charls.h>
 #else
-#include "gdcmcharls/header.h"
-#include "gdcmcharls/interface.h"
-#include "gdcmcharls/util.h"
-#include "gdcmcharls/defaulttraits.h"
-#include "gdcmcharls/losslesstraits.h"
-#include "gdcmcharls/colortransform.h"
-#include "gdcmcharls/processline.h"
+#include "gdcmcharls/charls.h"
 #endif
 
 #endif

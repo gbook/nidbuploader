@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public:
   /// Read the DICOM image. There are three reasons for failure:
   /// 1. The extent is not set
   /// 2. the conversion from void* to std::ostream (internally) fails
-  /// 3. the given buffer isn't large enough to accomodate the desired pixel extent.
+  /// 3. the given buffer isn't large enough to accommodate the desired pixel extent.
   /// This method has been implemented to look similar to the metaimageio in itk
   /// MUST have an extent defined, or else Read will return false.
   /// If no particular extent is required, use ImageReader instead.

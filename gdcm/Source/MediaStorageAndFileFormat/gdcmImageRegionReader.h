@@ -35,7 +35,7 @@ class GDCM_EXPORT ImageRegionReader : public ImageReader
 {
 public:
   ImageRegionReader();
-  ~ImageRegionReader();
+  ~ImageRegionReader() override;
 
   /// Set/Get Region to be read
   void SetRegion(Region const & region);
@@ -51,12 +51,14 @@ public:
   bool ReadInformation();
 
   /// Read into buffer:
+  /// For Python, the `buflen` param is deduced directly from the input
+  /// bytearray passed as parameter (function only takes one param).
   /// \return false upon error
   bool ReadIntoBuffer(char *inreadbuffer, size_t buflen);
 
 protected:
   /// To prevent user from calling super class Read() function
-  bool Read();
+  bool Read() override;
 
 private:
   BoxRegion ComputeBoundingBox();

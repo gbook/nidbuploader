@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ class File;
  * \details this file defines the messages for the cecho action
  */
 class CStoreRQ : public BaseCompositeMessage {
-      std::vector<PresentationDataValue> ConstructPDV(const ULConnection &inConnection, const BaseRootQuery* inRootQuery);//to fulfill the virtual contract
+      std::vector<PresentationDataValue> ConstructPDV(const ULConnection &inConnection, const BaseRootQuery* inRootQuery) override;//to fulfill the virtual contract
     public:
       std::vector<PresentationDataValue> ConstructPDV(const ULConnection &inConnection,
         const File& file,  bool writeDataSet = true );
@@ -40,7 +40,7 @@ class CStoreRQ : public BaseCompositeMessage {
  * this file defines the messages for the cecho action
  */
     class CStoreRSP : public BaseCompositeMessage {
-      std::vector<PresentationDataValue> ConstructPDV(const ULConnection &inConnection, const BaseRootQuery* inRootQuery);//to fulfill the virtual contract
+      std::vector<PresentationDataValue> ConstructPDV(const ULConnection &inConnection, const BaseRootQuery* inRootQuery) override;//to fulfill the virtual contract
     public:
       std::vector<PresentationDataValue> ConstructPDV(const DataSet* inDataSet, const BasePDU* inPC);
     };

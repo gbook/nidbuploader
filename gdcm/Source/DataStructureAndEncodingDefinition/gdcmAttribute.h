@@ -66,7 +66,7 @@ public:
 /**
  * \brief Attribute class
  * This class use template metaprograming tricks to let the user know when the template
- * instanciation does not match the public dictionary.
+ * instantiation does not match the public dictionary.
  *
  * Typical example that compile is:
  * Attribute<0x0008,0x9007> a = {"ORIGINAL","PRIMARY","T1","NONE"};
@@ -79,7 +79,7 @@ public:
  * Attribute<0x0018,0x1182, VR::UL, VM::VM2> fd3 = {0,1}; // UL is not valid VR
  */
 template<uint16_t Group, uint16_t Element,
-   int TVR = TagToType<Group, Element>::VRType, // can the user override this value ?
+   long long TVR = TagToType<Group, Element>::VRType, // can the user override this value ?
    int TVM = TagToType<Group, Element>::VMType // can the user override this value ?
    /*typename SQAttribute = void_*/ > // if only I had variadic template...
 class Attribute
@@ -118,7 +118,7 @@ public:
     os << GetTag() << " ";
     os << TagToType<Group,Element>::GetVRString()  << " ";
     os << TagToType<Group,Element>::GetVMString()  << " ";
-    os << Internal[0]; // VM is at least garantee to be one
+    os << Internal[0]; // VM is at least guarantee to be one
     for(unsigned int i=1; i<GetNumberOfValues(); ++i)
       os << "," << Internal[i];
     }
@@ -205,7 +205,7 @@ public:
 
   void SetFromDataElement(DataElement const &de) {
     // This is kind of hackish but since I do not generate other element than the first one: 0x6000 I should be ok:
-    assert( GetTag() == de.GetTag() || GetTag().GetGroup() == 0x6000 || GetTag().GetGroup() == 0x5000 );
+    assert( Tag(Group,Element) == de.GetTag() || Group == 0x6000 || Group == 0x5000 );
     assert( GetVR() != VR::INVALID );
     assert( GetVR().Compatible( de.GetVR() ) || de.GetVR() == VR::INVALID ); // In case of VR::INVALID cannot use the & operator
     if( de.IsEmpty() ) return;
@@ -224,13 +224,13 @@ public:
       }
   }
   void Set(DataSet const &ds) {
-    SetFromDataElement( ds.GetDataElement( GetTag() ) );
+    SetFromDataElement( ds.GetDataElement( Tag(Group,Element) ) );
   }
   void SetFromDataSet(DataSet const &ds) {
-    if( ds.FindDataElement( GetTag() ) &&
-      !ds.GetDataElement( GetTag() ).IsEmpty() )
+    if( ds.FindDataElement( Tag(Group,Element) ) &&
+      !ds.GetDataElement( Tag(Group,Element) ).IsEmpty() )
       {
-      SetFromDataElement( ds.GetDataElement( GetTag() ) );
+      SetFromDataElement( ds.GetDataElement( Tag(Group,Element) ) );
       }
   }
 protected:
@@ -314,7 +314,7 @@ protected:
 
 };
 
-template<uint16_t Group, uint16_t Element, int TVR >
+template<uint16_t Group, uint16_t Element, long long TVR >
 class Attribute<Group,Element,TVR,VM::VM1>
 {
 public:
@@ -353,7 +353,7 @@ public:
     os << GetTag() << " ";
     os << TagToType<Group,Element>::GetVRString()  << " ";
     os << TagToType<Group,Element>::GetVMString()  << " ";
-    os << Internal; // VM is at least garantee to be one
+    os << Internal; // VM is at least guarantee to be one
   }
   // copy:
   //ArrayType GetValue(unsigned int idx = 0) {
@@ -416,7 +416,7 @@ public:
 
   // API to talk to the run-time layer: gdcm::DataElement
   DataElement GetAsDataElement() const {
-    DataElement ret( GetTag() );
+    DataElement ret( Tag(Group,Element) );
     std::ostringstream os;
     // os.imbue(std::locale::classic()); // This is not required AFAIK
     EncodingImplementation<VRToEncoding<TVR>::Mode>::Write(&Internal,
@@ -440,7 +440,7 @@ public:
 
   void SetFromDataElement(DataElement const &de) {
     // This is kind of hackish but since I do not generate other element than the first one: 0x6000 I should be ok:
-    assert( GetTag() == de.GetTag() || GetTag().GetGroup() == 0x6000 || GetTag().GetGroup() == 0x5000 );
+    assert( Tag(Group,Element) == de.GetTag() || Group == 0x6000 || Group == 0x5000 );
     assert( GetVR() != VR::INVALID );
     assert( GetVR().Compatible( de.GetVR() ) || de.GetVR() == VR::INVALID ); // In case of VR::INVALID cannot use the & operator
     if( de.IsEmpty() ) return;
@@ -459,13 +459,13 @@ public:
       }
   }
   void Set(DataSet const &ds) {
-    SetFromDataElement( ds.GetDataElement( GetTag() ) );
+    SetFromDataElement( ds.GetDataElement( Tag(Group,Element) ) );
   }
   void SetFromDataSet(DataSet const &ds) {
-    if( ds.FindDataElement( GetTag() ) &&
-      !ds.GetDataElement( GetTag() ).IsEmpty() )
+    if( ds.FindDataElement( Tag(Group,Element) ) &&
+      !ds.GetDataElement( Tag(Group,Element) ).IsEmpty() )
       {
-      SetFromDataElement( ds.GetDataElement( GetTag() ) );
+      SetFromDataElement( ds.GetDataElement( Tag(Group,Element) ) );
       }
   }
 protected:
@@ -551,7 +551,7 @@ protected:
 
 // No need to repeat default template arg, since primary template
 // will be used to generate the default arguments
-template<uint16_t Group, uint16_t Element, int TVR >
+template<uint16_t Group, uint16_t Element, long long TVR >
 class Attribute<Group,Element,TVR,VM::VM1_n>
 {
 public:
@@ -571,19 +571,19 @@ public:
   static VM  GetDictVM() { return GetVM(); }
 
   // This the way to prevent default initialization
-  explicit Attribute() { Internal=0; Length=0; Own = true; }
+  explicit Attribute() { Internal=nullptr; Length=0; Own = true; }
   ~Attribute() {
     if( Own ) {
       delete[] Internal;
     }
-    Internal = 0; // paranoid
+    Internal = nullptr; // paranoid
   }
 
   unsigned int GetNumberOfValues() const { return Length; }
 
   void SetNumberOfValues(unsigned int numel)
     {
-    SetValues(NULL, numel, true);
+    SetValues(nullptr, numel, true);
     }
 
   const ArrayType* GetValues() const {
@@ -593,7 +593,7 @@ public:
     os << GetTag() << " ";
     os << GetVR()  << " ";
     os << GetVM()  << " ";
-    os << Internal[0]; // VM is at least garantee to be one
+    os << Internal[0]; // VM is at least guarantee to be one
     for(unsigned int i=1; i<GetNumberOfValues(); ++i)
       os << "," << Internal[i];
     }
@@ -624,11 +624,11 @@ public:
       {
       // yes !
       if( Own ) delete[] Internal;
-      Internal = 0;
+      Internal = nullptr;
       }
     Own = own;
     Length = numel;
-    assert( Internal == 0 );
+    assert( Internal == nullptr );
     if( own ) // make a copy:
       {
       Internal = new ArrayType[numel];
@@ -719,42 +719,42 @@ private:
   bool Own : 1;
 };
 
-template<uint16_t Group, uint16_t Element, int TVR>
+template<uint16_t Group, uint16_t Element, long long TVR>
 class Attribute<Group,Element,TVR,VM::VM1_3> : public Attribute<Group,Element,TVR,VM::VM1_n>
 {
 public:
   VM  GetVM() const { return VM::VM1_3; }
 };
 
-template<uint16_t Group, uint16_t Element, int TVR>
+template<uint16_t Group, uint16_t Element, long long TVR>
 class Attribute<Group,Element,TVR,VM::VM1_8> : public Attribute<Group,Element,TVR,VM::VM1_n>
 {
 public:
   VM  GetVM() const { return VM::VM1_8; }
 };
 
-template<uint16_t Group, uint16_t Element, int TVR>
+template<uint16_t Group, uint16_t Element, long long TVR>
 class Attribute<Group,Element,TVR,VM::VM2_n> : public Attribute<Group,Element,TVR,VM::VM1_n>
 {
 public:
   VM  GetVM() const { return VM::VM2_n; }
 };
 
-template<uint16_t Group, uint16_t Element, int TVR>
+template<uint16_t Group, uint16_t Element, long long TVR>
 class Attribute<Group,Element,TVR,VM::VM2_2n> : public Attribute<Group,Element,TVR,VM::VM2_n>
 {
 public:
   static VM  GetVM() { return VM::VM2_2n; }
 };
 
-template<uint16_t Group, uint16_t Element, int TVR>
+template<uint16_t Group, uint16_t Element, long long TVR>
 class Attribute<Group,Element,TVR,VM::VM3_n> : public Attribute<Group,Element,TVR,VM::VM1_n>
 {
 public:
   static VM  GetVM() { return VM::VM3_n; }
 };
 
-template<uint16_t Group, uint16_t Element, int TVR>
+template<uint16_t Group, uint16_t Element, long long TVR>
 class Attribute<Group,Element,TVR,VM::VM3_3n> : public Attribute<Group,Element,TVR,VM::VM3_n>
 {
 public:
@@ -763,7 +763,7 @@ public:
 
 
 // For particular case for ASCII string
-// WARNING: This template explicitly instanciates a particular
+// WARNING: This template explicitly instantiates a particular
 // EncodingImplementation THEREFORE it is required to be declared after the
 // EncodingImplementation is needs (doh!)
 #if 0
@@ -795,7 +795,7 @@ public:
   }
   // Implementation of Print is common to all Mode (ASCII/Binary)
   void Print(std::ostream &_os) const {
-    _os << Internal[0]; // VM is at least garantee to be one
+    _os << Internal[0]; // VM is at least guarantee to be one
     for(int i=1; i<VMToLength<TVM>::Length; ++i)
       _os << "," << Internal[i];
     }
@@ -869,7 +869,7 @@ public:
   void Print(std::ostream &_os) const {
     assert( Length );
     assert( Internal );
-    _os << Internal[0]; // VM is at least garantee to be one
+    _os << Internal[0]; // VM is at least guarantee to be one
     const unsigned long length = GetLength() < 25 ? GetLength() : 25;
     for(unsigned long i=1; i<length; ++i)
       _os << "," << Internal[i];

@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -186,7 +186,7 @@ EStateID ULActionDT1::PerformAction(Subject *s, ULEvent& inEvent, ULConnection& 
   for (itor = theDataPDUs.begin(); itor < theDataPDUs.end(); itor++) {
 
     PDataTFPDU* dataPDU = dynamic_cast<PDataTFPDU*>(*itor);
-    if (dataPDU == NULL)
+    if (dataPDU == nullptr)
       {
       throw Exception("Data sending event PDU malformed.");
       }
@@ -208,7 +208,7 @@ EStateID ULActionDT1::PerformAction(Subject *s, ULEvent& inEvent, ULConnection& 
   if ( pStream )
     {
     PDataTFPDU* dataPDU = dynamic_cast<PDataTFPDU*>(theDataPDUs[0]);
-    if (dataPDU == NULL)
+    if (dataPDU == nullptr)
       {
       throw Exception("Data sending event PDU malformed.");
       }
@@ -255,8 +255,8 @@ EStateID ULActionDT1::PerformAction(Subject *s, ULEvent& inEvent, ULConnection& 
       }
     delete [] contents ;
     }
-  // When doing a C-MOVE we recevie the Requested DataSet over
-  // another chanel (technically this is send to an SCP)
+  // When doing a C-MOVE we receive the Requested DataSet over
+  // another channel (technically this is send to an SCP)
   // in our case we use another port to receive it.
 
 #if USE_PROCESS_INPUT

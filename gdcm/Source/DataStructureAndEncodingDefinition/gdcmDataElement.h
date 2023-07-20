@@ -58,7 +58,7 @@ class SequenceOfFragments;
 class GDCM_EXPORT DataElement
 {
 public:
-  DataElement(const Tag& t = Tag(0), const VL& vl = 0, const VR &vr = VR::INVALID):TagField(t),ValueLengthField(vl),VRField(vr),ValueField(0) {}
+  DataElement(const Tag& t = Tag(0), const VL& vl = 0, const VR &vr = VR::INVALID):TagField(t),ValueLengthField(vl),VRField(vr),ValueField(nullptr) {}
   //DataElement( Attribute const &att );
 
   friend std::ostream& operator<<(std::ostream &_os, const DataElement &_val);
@@ -92,7 +92,10 @@ public:
 
   /// Set/Get Value (bytes array, SQ of items, SQ of fragments):
   Value const &GetValue() const { gdcmAssertAlwaysMacro(ValueField); return *ValueField; }
-  Value &GetValue() { return *ValueField; }
+  Value &GetValue() {
+    gdcmAssertAlwaysMacro(ValueField);
+    return *ValueField;
+  }
   /// \warning you need to set the ValueLengthField explicitly
   void SetValue(Value const & vl) {
     //assert( ValueField == 0 );
@@ -100,17 +103,17 @@ public:
     ValueLengthField = vl.GetLength();
   }
   /// Check if Data Element is empty
-  bool IsEmpty() const { return ValueField == 0 || (GetByteValue() && GetByteValue()->IsEmpty()); }
+  bool IsEmpty() const { return ValueField == nullptr || (GetByteValue() && GetByteValue()->IsEmpty()); }
 
   /// Make Data Element empty (no Value)
-  void Empty() { ValueField = 0; ValueLengthField = 0; }
+  void Empty() { ValueField = nullptr; ValueLengthField = 0; }
 
   /// Clear Data Element (make Value empty and invalidate Tag & VR)
   void Clear()
     {
     TagField = 0;
     VRField = VR::INVALID;
-    ValueField = 0;
+    ValueField = nullptr;
     ValueLengthField = 0;
     }
 
@@ -134,7 +137,7 @@ public:
   }
 
   /// Interpret the Value stored in the DataElement. This is more robust (but also more
-  /// expensive) to call this function rather than the simpliest form: GetSequenceOfItems()
+  /// expensive) to call this function rather than the simplest form: GetSequenceOfItems()
   /// It also return NULL when the Value is NOT of type SequenceOfItems
   /// \warning in case GetSequenceOfItems() succeed the function return this value, otherwise
   /// it creates a new SequenceOfItems, you should handle that in your case, for instance:
@@ -163,14 +166,8 @@ public:
     {
     return GetTag() < de.GetTag();
     }
-  DataElement &operator=(const DataElement &de)
-    {
-    TagField = de.TagField;
-    ValueLengthField = de.ValueLengthField;
-    VRField = de.VRField;
-    ValueField = de.ValueField; // Pointer copy
-    return *this;
-    }
+  DataElement &operator=(const DataElement &)
+    = default;
 
   bool operator==(const DataElement &de) const
     {
@@ -189,7 +186,7 @@ public:
     return false;
     }
 
-  // The following fonctionalities are dependant on:
+  // The following functionalities are dependent on:
   // # The Transfer Syntax: Explicit or Implicit
   // # The Byte encoding: Little Endian / Big Endian
 

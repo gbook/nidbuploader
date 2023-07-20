@@ -110,7 +110,7 @@ static bool DecompressPapyrus3( int pap3handle, int itemnum, gdcm::TransferSynta
 
     gdcm::DataSet & nested = file.GetDataSet();
 
-    /* position the file pointer to the begining of the data set */
+    /* position the file pointer to the beginning of the data set */
     PapyShort err = Papy3GotoNumber (fileNb, (PapyShort)imageNb, DataSetID);
 
     gdcm::DataElement pixeldata( gdcm::Tag(0x7fe0,0x0010) );
@@ -193,11 +193,11 @@ int main(int argc, char *argv[])
   int help = 0;
   int version = 0;
 
-  while (1) {
+  while (true) {
     int option_index = 0;
     static struct option long_options[] = {
-        {"input", 1, 0, 0},
-        {"output", 1, 0, 0},
+        {"input", 1, nullptr, 0},
+        {"output", 1, nullptr, 0},
         {"root-uid", 1, &rootuid, 1}, // specific Root (not GDCM)
         {"split", 0, &split, 1},
         {"decomp-pap3", 0, &decomp_pap3, 1},
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
         {"help", 0, &help, 1},
         {"version", 0, &version, 1},
 
-        {0, 0, 0, 0}
+        {nullptr, 0, nullptr, 0}
     };
 
     c = getopt_long (argc, argv, "i:o:S:VWDEhv",
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
     while (optind < argc)
       {
       //printf ("%s\n", argv[optind++]);
-      files.push_back( argv[optind++] );
+      files.emplace_back(argv[optind++] );
       }
     //printf ("\n");
     if( files.size() == 2

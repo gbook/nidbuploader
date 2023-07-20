@@ -3,7 +3,7 @@
 # set(ENV{PYTHONPATH} ${LIBRARY_OUTPUT_PATH})
 # set(my_test "from test_mymodule import *\;test_mymodule()")
 # add_test(PYTHON-TEST-MYMODULE  python -c ${my_test})
-# Since cmake is only transmitting the ADD_TEST line to ctest thus you are loosing
+# Since cmake is only transmitting the ADD_TEST line to ctest thus you are losing
 # the env var. The only way to store the env var is to physically write in the cmake script
 # whatever PYTHONPATH you want and then add the test as 'cmake -P python_test.cmake'
 #
@@ -20,7 +20,7 @@
 #
 
 # Need python interpreter:
-find_package(PythonInterp REQUIRED)
+find_package(PythonInterp ${GDCM_DEFAULT_PYTHON_VERSION} REQUIRED)
 mark_as_advanced(PYTHON_EXECUTABLE)
 
 macro(ADD_PYTHON_TEST TESTNAME FILENAME)
@@ -72,7 +72,7 @@ macro(ADD_PYTHON_TEST TESTNAME FILENAME)
     message(\"loc is: \${loc}\")
     message(\"wo is: \${wo_semicolumn}\")
     execute_process(
-      COMMAND ${PYTHON_EXECUTABLE} -v ${loc} ${wo_semicolumn}
+      COMMAND ${PYTHON_EXECUTABLE} ${loc} ${wo_semicolumn}
       RESULT_VARIABLE import2_res
       OUTPUT_VARIABLE import2_output
       ERROR_VARIABLE  import2_output

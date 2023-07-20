@@ -35,7 +35,6 @@
      <widget class="QGroupBox" name="verticalGroupBox">
       <property name="font">
        <font>
-        <weight>75</weight>
         <bold>true</bold>
        </font>
       </property>
@@ -106,7 +105,6 @@ QGroupBox::title {
               <widget class="QLabel" name="label_5">
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -119,7 +117,6 @@ QGroupBox::title {
               <widget class="QLineEdit" name="txtDataDir">
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -144,7 +141,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -170,7 +166,6 @@ QGroupBox::title {
               <widget class="QLabel" name="label_2">
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -189,7 +184,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -203,7 +197,6 @@ QGroupBox::title {
           <widget class="QPushButton" name="btnSearch">
            <property name="font">
             <font>
-             <weight>50</weight>
              <bold>false</bold>
             </font>
            </property>
@@ -245,7 +238,6 @@ QGroupBox::title {
           <widget class="QCheckBox" name="chkUseMD5">
            <property name="font">
             <font>
-             <weight>50</weight>
              <bold>false</bold>
             </font>
            </property>
@@ -298,7 +290,6 @@ QGroupBox::title {
            </property>
            <property name="font">
             <font>
-             <weight>50</weight>
              <bold>false</bold>
             </font>
            </property>
@@ -321,7 +312,6 @@ QGroupBox::title {
           <widget class="QTableWidget" name="tableFiles">
            <property name="font">
             <font>
-             <weight>50</weight>
              <bold>false</bold>
             </font>
            </property>
@@ -361,7 +351,6 @@ QGroupBox::title {
             </property>
             <property name="font">
              <font>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -545,7 +534,6 @@ QGroupBox::title {
              </property>
              <property name="font">
               <font>
-               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>
@@ -589,7 +577,6 @@ QGroupBox::title {
              </property>
              <property name="font">
               <font>
-               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>
@@ -625,7 +612,6 @@ QGroupBox::title {
          <widget class="QGroupBox" name="groupBox2">
           <property name="font">
            <font>
-            <weight>75</weight>
             <bold>true</bold>
             <underline>false</underline>
            </font>
@@ -692,7 +678,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -711,12 +696,11 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
                  <property name="text">
-                  <string>http://</string>
+                  <string>https://</string>
                  </property>
                  <property name="frame">
                   <bool>true</bool>
@@ -749,7 +733,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -762,7 +745,6 @@ QGroupBox::title {
                 <widget class="QLineEdit" name="txtUsername">
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -782,7 +764,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -795,7 +776,6 @@ QGroupBox::title {
                 <widget class="QLineEdit" name="txtPassword">
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -816,7 +796,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -850,7 +829,6 @@ QGroupBox::title {
                 <widget class="QLabel" name="label">
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -869,7 +847,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -900,7 +877,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -922,7 +898,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -955,7 +930,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1008,7 +982,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1037,7 +1010,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1053,7 +1025,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1066,7 +1037,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1082,7 +1052,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1101,7 +1070,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1117,7 +1085,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1130,7 +1097,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1146,7 +1112,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1159,7 +1124,6 @@ QGroupBox::title {
               <widget class="QCheckBox" name="chkUseProxy">
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1175,7 +1139,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1210,7 +1173,6 @@ QGroupBox::title {
             </property>
             <property name="font">
              <font>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1266,7 +1228,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1285,7 +1246,6 @@ QGroupBox::title {
               <widget class="QCheckBox" name="chkReplacePatientID">
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1304,7 +1264,6 @@ QGroupBox::title {
               <widget class="QCheckBox" name="chkReplacePatientBirthDate">
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1323,7 +1282,6 @@ QGroupBox::title {
               <widget class="QCheckBox" name="chkRemovePatientBirthDate">
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1347,7 +1305,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1372,7 +1329,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1394,7 +1350,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1506,7 +1461,6 @@ QGroupBox::title {
                </property>
                <property name="font">
                 <font>
-                 <weight>50</weight>
                  <bold>false</bold>
                 </font>
                </property>
@@ -1522,7 +1476,6 @@ QGroupBox::title {
            <widget class="QGroupBox" name="groupBox1_2">
             <property name="font">
              <font>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1568,7 +1521,6 @@ QGroupBox::title {
                 <widget class="QCheckBox" name="chkMatchIDOnly">
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1588,7 +1540,6 @@ QGroupBox::title {
                 <widget class="QLabel" name="label_4">
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1607,7 +1558,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1623,7 +1573,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1646,7 +1595,6 @@ QGroupBox::title {
                 <widget class="QLabel" name="label_3">
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1665,7 +1613,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1681,7 +1628,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1701,7 +1647,6 @@ QGroupBox::title {
                 <widget class="QLabel" name="label_8">
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1720,7 +1665,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1736,7 +1680,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1759,7 +1702,6 @@ QGroupBox::title {
                 <widget class="QLabel" name="label_18">
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1778,7 +1720,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1794,7 +1735,6 @@ QGroupBox::title {
                  </property>
                  <property name="font">
                   <font>
-                   <weight>50</weight>
                    <bold>false</bold>
                   </font>
                  </property>
@@ -1943,7 +1883,6 @@ QGroupBox::title {
            <widget class="QLabel" name="label_6">
             <property name="font">
              <font>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1963,7 +1902,6 @@ QGroupBox::title {
            <widget class="QLabel" name="label_10">
             <property name="font">
              <font>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -1986,7 +1924,6 @@ QGroupBox::title {
            <widget class="QLabel" name="label_11">
             <property name="font">
              <font>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -2176,7 +2113,6 @@ QGroupBox::title {
           <property name="font">
            <font>
             <pointsize>11</pointsize>
-            <weight>75</weight>
             <bold>true</bold>
             <stylestrategy>PreferAntialias</stylestrategy>
             <kerning>true</kerning>

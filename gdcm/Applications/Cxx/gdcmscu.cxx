@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
   gdcm::Tag tag;
   std::vector< std::pair<gdcm::Tag, std::string> > keys;
   
-  while (1) {
+  while (true) {
     //int this_option_optind = optind ? optind : 1;
     int option_index = 0;
     /*
@@ -199,16 +199,16 @@ int main(int argc, char *argv[])
       {"error", 0, &error, 1},
       {"help", 0, &help, 1},
       {"version", 0, &version, 1},
-      {"hostname", 1, 0, 0},     // -h
-      {"aetitle", 1, 0, 0},     //
-      {"call", 1, 0, 0},     //
+      {"hostname", 1, nullptr, 0},     // -h
+      {"aetitle", 1, nullptr, 0},     //
+      {"call", 1, nullptr, 0},     //
       {"port", 0, &port, 1}, // -p
-      {"input", 1, 0, 0}, // dcmfile-in
+      {"input", 1, nullptr, 0}, // dcmfile-in
       {"echo", 0, &echomode, 1}, // --echo
       {"store", 0, &storemode, 1}, // --store
       {"find", 0, &findmode, 1}, // --find
       {"move", 0, &movemode, 1}, // --move
-      {"key", 1, 0, 0}, // (15) --key
+      {"key", 1, nullptr, 0}, // (15) --key
       {"worklist", 0, &findworklist, 1}, // --worklist
       {"patientroot", 0, &findpatientroot, 1}, // --patientroot
       {"studyroot", 0, &findstudyroot, 1}, // --studyroot
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
       {"image", 0, &imagequery, 1}, // --image
       {"log-file", 1, &logfile, 1}, // --log-file
       {"get", 0, &getmode, 1}, // --get
-      {0, 0, 0, 0} // required
+      {nullptr, 0, nullptr, 0} // required
     };
     static const char short_options[] = "i:H:p:L:VWDEhvk:o:r";
     c = getopt_long (argc, argv, short_options,
@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
             //ss >> str;
             std::getline(ss, str); // do not skip whitespace
             if( str.size() % 2 == 1 ) str += " ";
-            keys.push_back( std::make_pair(tag, str) );
+            keys.emplace_back(tag, str );
           }
           else if( option_index == 20 ) /* port-scp */
           {
@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
         assert( cdummy == ',' || cdummy == '=' );
         std::string str;
         std::getline(ss, str); // do not skip whitespace
-        keys.push_back( std::make_pair(tag, str) );
+        keys.emplace_back(tag, str );
       }
         break;
         
@@ -426,7 +426,7 @@ int main(int argc, char *argv[])
       std::vector<std::string> files;
       while (optind < argc)
         {
-        files.push_back( argv[optind++] );
+        files.emplace_back(argv[optind++] );
         }
       filenames = files;
       }

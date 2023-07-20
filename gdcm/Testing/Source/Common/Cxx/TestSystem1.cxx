@@ -23,7 +23,7 @@
 
 int TestGetTimeOfDay()
 {
-  time_t t = time(0);
+  time_t t = time(nullptr);
   char date[22];
   if( !gdcm::System::GetCurrentDateTime(date) )
     {
@@ -292,6 +292,7 @@ int TestSystem1(int, char *[])
     }
   else
   {
+    std::cerr << "cannot get Hostname" << std::endl;
   return 1;
   }
 
@@ -300,6 +301,7 @@ int TestSystem1(int, char *[])
   //gdcm::System::FormatDateTime(date3, t);
   //std::cout << date3 << std::endl;
 
+  std::cout << "Check dates:" << std::endl;
   const char fixed_date[] = "20090428172557.515500";
   if( strlen( fixed_date ) != 21 )
   {
@@ -378,9 +380,12 @@ if( !gdcm::System::ParseDateTime(fixed_timep, fixed_milliseconds, valid_date1) )
 std::cerr << "should accept:" << valid_date1 << std::endl;
 return 1;
 }
+  std::cout << "End Check dates" << std::endl;
   int res = 0;
   res +=  TestGetTimeOfDay();
+  std::cout << "res = " << res << std::endl;
   res +=  TestMakeDirectory();
+  std::cout << "res = " << res << std::endl;
 
   const char * testfilesize = gdcm::Testing::GetTempFilename( "filesize.bin" );
 if( gdcm::System::FileExists( testfilesize ) )

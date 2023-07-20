@@ -26,6 +26,7 @@
 #include <QSignalMapper>
 #include <QDateTime>
 #include <QNetworkProxy>
+#include <QRandomGenerator>
 
 #ifdef _WIN32_
     #include <cstdlib>
@@ -89,13 +90,13 @@ public:
     bool isUploading;
 
     QDateTime startFileSearchTime;
-    QTime elapsedFileSearchTime;
+    QElapsedTimer elapsedFileSearchTime;
     int numFilesFound;
     qint64 numBytesFound;
 
     QDateTime startUploadTime;
-    QTime uploadTime;
-    QTime elapsedUploadTime;
+    QElapsedTimer uploadTime;
+    QElapsedTimer elapsedUploadTime;
     int numAnonErrors;
     qint64 numBytesSentSuccess;
     qint64 numBytesSentFail;

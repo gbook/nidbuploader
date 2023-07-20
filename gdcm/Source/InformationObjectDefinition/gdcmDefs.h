@@ -34,12 +34,14 @@ class GDCM_EXPORT Defs
 public:
   Defs();
   ~Defs();
+  Defs &operator=(const Defs &val) = delete;
+  Defs(const Defs &val) = delete;
 
   const Modules &GetModules() const { return Part3Modules; }
   Modules &GetModules() { return Part3Modules; }
 
   /// Users should not directly use Macro. Macro are simply a way for DICOM WG to re-use Tables.
-  /// Macros are conviently wraped within Modules. See gdcm::Module API directly
+  /// Macros are conviently wrapped within Modules. See gdcm::Module API directly
   const Macros &GetMacros() const { return Part3Macros; }
   Macros &GetMacros() { return Part3Macros; }
 
@@ -70,8 +72,6 @@ private:
   Modules Part3Modules;
   IODs Part3IODs;
 
-  Defs &operator=(const Defs &val); // purposely not implemented
-  Defs(const Defs &val); // purposely not implemented
 };
 
 

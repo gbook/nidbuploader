@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -29,13 +29,13 @@ namespace gdcm
 class GDCM_EXPORT QueryPatient : public QueryBase
 {
 public:
-  std::vector<Tag> GetRequiredTags(const ERootType& inRootType) const;
-  std::vector<Tag> GetUniqueTags(const ERootType& inRootType) const;
-  std::vector<Tag> GetOptionalTags(const ERootType& inRootType) const;
-  std::vector<Tag> GetHierachicalSearchTags(const ERootType& inRootType) const;
+  std::vector<Tag> GetRequiredTags(const ERootType& inRootType) const override;
+  std::vector<Tag> GetUniqueTags(const ERootType& inRootType) const override;
+  std::vector<Tag> GetOptionalTags(const ERootType& inRootType) const override;
+  std::vector<Tag> GetHierachicalSearchTags(const ERootType& inRootType) const override;
 
-  const char * GetName() const;
-  DataElement GetQueryLevel() const;
+  const char * GetName() const override;
+  DataElement GetQueryLevel() const override;
 };
 
 } // end namespace gdcm

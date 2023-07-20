@@ -56,7 +56,7 @@ Bitmap::Bitmap():
   LossyFlag(false)
 {}
 
-Bitmap::~Bitmap() {}
+Bitmap::~Bitmap() = default;
 
 /*
  * Internal implementation everything assume that NumberOfDimensions was set
@@ -152,7 +152,7 @@ void Bitmap::SetPlanarConfiguration(unsigned int pc)
     // LEADTOOLS_FLOWERS-8-MONO2-Uncompressed.dcm
     if( PF.GetSamplesPerPixel() != 3 ) // Please set PixelFormat first
       {
-      gdcmWarningMacro( "Cant have Planar Configuration in non RGB input. Discarding" );
+      gdcmWarningMacro( "Cannot have Planar Configuration in non RGB input. Discarding" );
       PlanarConfiguration = 0;
       }
     const TransferSyntax &ts = GetTransferSyntax();
@@ -176,7 +176,7 @@ void Bitmap::SetPlanarConfiguration(unsigned int pc)
       // manner of encoding components is specified in the JPEG 2000 standard,
       // hence it shall be set to 0.
       // By extension, this behavior has been applied also to JPEG and JPEG-LS
-      gdcmWarningMacro( "Cant have Planar Configuration in JPEG/JPEG-LS/JPEG 2000. Discarding" );
+      gdcmWarningMacro( "Cannot have Planar Configuration in JPEG/JPEG-LS/JPEG 2000. Discarding" );
       PlanarConfiguration = 0;
       }
     }
@@ -264,7 +264,7 @@ unsigned long Bitmap::GetBufferLength() const
   std::vector<unsigned int>::const_iterator it = Dimensions.begin();
   for(; it != Dimensions.end(); ++it)
     {
-    assert( *it );
+    if( *it == 0 ) { gdcmWarningMacro("Dimension has been found to be zero" ); }
     mul *= *it;
     }
   // Multiply by the pixel size:
@@ -286,12 +286,12 @@ unsigned long Bitmap::GetBufferLength() const
     {
     assert( PF.GetSamplesPerPixel() == 1 );
     const size_t bytesPerRow = Dimensions[0] / 8 + (Dimensions[0] % 8 != 0 ? 1 : 0);
-    unsigned int save = bytesPerRow * Dimensions[1];
+    size_t save = bytesPerRow * Dimensions[1];
     if( NumberOfDimensions > 2 )
       save *= Dimensions[2];
     if(Dimensions[0] % 8 == 0 )
       assert( save * 8 == mul );
-    mul = save;
+    mul = (unsigned int)save;
     }
   else if( PF.GetBitsAllocated() % 8 != 0 )
     {
@@ -313,7 +313,7 @@ unsigned long Bitmap::GetBufferLength() const
     }
   len = mul;
 
-  assert( len != 0 );
+  //assert( len != 0 );
   return len;
 }
 
@@ -326,6 +326,10 @@ bool Bitmap::TryRAWCodec(char *buffer, bool &lossyflag) const
     if( codec.CanDecode( ts ) ) // short path
       {
       lossyflag = false;
+      if( GetPhotometricInterpretation() == PhotometricInterpretation::YBR_FULL_422 )
+      {
+        lossyflag = true;
+      }
       return true;
       }
     return false;
@@ -346,6 +350,12 @@ bool Bitmap::TryRAWCodec(char *buffer, bool &lossyflag) const
     //bool r = codec.Decode(PixelData, out);
     bool r = codec.DecodeBytes(bv->GetPointer(), bv->GetLength(),
       buffer, len);
+    if( GetNeedByteSwap() )
+      {
+      // Internally DecodeBytes always does the byteswapping step, so remove internal flag
+      Bitmap *i = const_cast<Bitmap*>(this);
+      i->SetNeedByteSwap(false);
+      }
     if( !r ) return false;
     //const ByteValue *outbv = out.GetByteValue();
     //assert( outbv );
@@ -390,6 +400,7 @@ bool Bitmap::TryJPEGCodec(char *buffer, bool &lossyflag) const
       const SequenceOfFragments *sf = PixelData.GetSequenceOfFragments();
       if( !sf ) return false;
       const Fragment &frag = sf->GetFragment(0);
+      if( frag.IsEmpty() ) return false;
       const ByteValue &bv2 = dynamic_cast<const ByteValue&>(frag.GetValue());
       PixelFormat pf = GetPixelFormat(); // PixelFormat::UINT8;
       codec.SetPixelFormat( pf );
@@ -408,12 +419,31 @@ bool Bitmap::TryJPEGCodec(char *buffer, bool &lossyflag) const
         Bitmap *i = (Bitmap*)this;
         i->SetPixelFormat( codec.GetPixelFormat() );
         }
+#else
+      const PixelFormat & cpf = codec.GetPixelFormat();
+      // SC16BitsAllocated_8BitsStoredJPEG.dcm
+      if( cpf.GetBitsAllocated() <= pf.GetBitsAllocated() )
+        {
+        if( cpf.GetPixelRepresentation() == pf.GetPixelRepresentation() )
+          {
+          if( cpf.GetSamplesPerPixel() == pf.GetSamplesPerPixel() )
+            {
+            if( cpf.GetBitsStored() < pf.GetBitsStored() )
+              {
+              Bitmap *i = const_cast<Bitmap*>(this);
+              gdcmWarningMacro( "Encapsulated stream has fewer bits actually stored on disk. correcting." );
+              i->GetPixelFormat().SetBitsAllocated( cpf.GetBitsAllocated() );
+              i->GetPixelFormat().SetBitsStored( cpf.GetBitsStored() );
+              }
+            }
+          }
+        }
 #endif
       if( GetDimensions()[0] != codec.GetDimensions()[0]
       || GetDimensions()[1] != codec.GetDimensions()[1] )
 {
       gdcmWarningMacro( "dimension mismatch for JPEG" );
-	((Bitmap*)this)->SetDimensions( codec.GetDimensions() ); //JPEGNote_bogus.dcm
+	(const_cast<Bitmap*>(this))->SetDimensions( codec.GetDimensions() ); //JPEGNote_bogus.dcm
 }
 
       return true;
@@ -441,7 +471,7 @@ bool Bitmap::TryJPEGCodec(char *buffer, bool &lossyflag) const
     // Did PI change or not ?
     if ( GetPlanarConfiguration() != codec.GetPlanarConfiguration() )
       {
-      Bitmap *i = (Bitmap*)this; (void)i;
+      Bitmap *i = const_cast<Bitmap*>(this); (void)i;
       //i->SetPlanarConfiguration( codec.GetPlanarConfiguration() );
       }
     // I cannot re-activate the following since I would loose the palette color information
@@ -454,17 +484,39 @@ bool Bitmap::TryJPEGCodec(char *buffer, bool &lossyflag) const
     //  i->SetPhotometricInterpretation( codec.GetPhotometricInterpretation() );
     //  }
 #if 1
-    if ( GetPixelFormat() != codec.GetPixelFormat() )
+    const PixelFormat & cpf = codec.GetPixelFormat();
+    const PixelFormat & pf = GetPixelFormat();
+    if ( pf != cpf )
       {
       // gdcmData/DCMTK_JPEGExt_12Bits.dcm
-      assert( GetPixelFormat().GetPixelRepresentation() ==
-        codec.GetPixelFormat().GetPixelRepresentation() );
-//      assert( GetPixelFormat().GetBitsStored() ==
-//        codec.GetPixelFormat().GetBitsStored() );
-      assert( GetPixelFormat().GetBitsAllocated() == 12 );
-      Bitmap *i = (Bitmap*)this;
-      i->SetPixelFormat( codec.GetPixelFormat() );
+      if( pf.GetPixelRepresentation() == cpf.GetPixelRepresentation() ) {
+        if( pf.GetBitsAllocated() == 12 ) {
+          Bitmap *i = const_cast<Bitmap*>(this);
+          i->GetPixelFormat().SetBitsAllocated( 16 );
+          i->GetPixelFormat().SetBitsStored( 12 );
+          }
+        }
       }
+#else
+      const PixelFormat & cpf = codec.GetPixelFormat();
+      const PixelFormat & pf = GetPixelFormat();
+      // SC16BitsAllocated_8BitsStoredJPEG.dcm
+      if( cpf.GetBitsAllocated() <= pf.GetBitsAllocated() )
+        {
+        if( cpf.GetPixelRepresentation() == pf.GetPixelRepresentation() )
+          {
+          if( cpf.GetSamplesPerPixel() == pf.GetSamplesPerPixel() )
+            {
+            if( cpf.GetBitsStored() < pf.GetBitsStored() )
+              {
+              Bitmap *i = const_cast<Bitmap*>(this);
+              gdcmWarningMacro( "Encapsulated stream has fewer bits actually stored on disk. correcting." );
+              i->GetPixelFormat().SetBitsAllocated( cpf.GetBitsAllocated() );
+              i->GetPixelFormat().SetBitsStored( cpf.GetBitsStored() );
+              }
+            }
+          }
+        }
 #endif
     //if ( GetPhotometricInterpretation() == PhotometricInterpretation::YBR_FULL_422
     //|| GetPhotometricInterpretation() == PhotometricInterpretation::YBR_FULL )
@@ -557,7 +609,7 @@ bool Bitmap::TryPVRGCodec(char *buffer, bool &lossyflag) const
     assert( r );
     if ( GetPlanarConfiguration() != codec.GetPlanarConfiguration() )
       {
-      Bitmap *i = (Bitmap*)this;
+      Bitmap *i = const_cast<Bitmap*>(this);
       i->PlanarConfiguration = codec.GetPlanarConfiguration();
       }
     const ByteValue *outbv = out.GetByteValue();
@@ -626,6 +678,7 @@ bool Bitmap::TryJPEGLSCodec(char *buffer, bool &lossyflag) const
       const SequenceOfFragments *sf = PixelData.GetSequenceOfFragments();
       if( !sf ) return false;
       const Fragment &frag = sf->GetFragment(0);
+      if( frag.IsEmpty() ) return false;
       const ByteValue &bv2 = dynamic_cast<const ByteValue&>(frag.GetValue());
 
       std::stringstream ss;
@@ -673,7 +726,7 @@ bool Bitmap::TryJPEGLSCodec(char *buffer, bool &lossyflag) const
     assert( len <= outbv->GetLength() );
     // DermaColorLossLess.dcm has a len of 63531, but DICOM will give us: 63532 ...
     assert( len <= outbv->GetLength() );
-    if(buffer) memcpy(buffer, outbv->GetPointer(), len /*outbv->GetLength()*/ );  // FIXME
+    memcpy(buffer, outbv->GetPointer(), len /*outbv->GetLength()*/ );  // FIXME
 
     //assert( codec.IsLossy() == ts.IsLossy() );
     lossyflag = codec.IsLossy();
@@ -681,6 +734,37 @@ bool Bitmap::TryJPEGLSCodec(char *buffer, bool &lossyflag) const
       {
       gdcmErrorMacro( "EVIL file, it is declared as lossless but is in fact lossy." );
       }
+      const PixelFormat & cpf = codec.GetPixelFormat();
+      const PixelFormat & pf = GetPixelFormat();
+      if( cpf.GetBitsAllocated() == pf.GetBitsAllocated() )
+        {
+        if( cpf.GetPixelRepresentation() == pf.GetPixelRepresentation() )
+          {
+          if( cpf.GetSamplesPerPixel() == pf.GetSamplesPerPixel() )
+            {
+            if( cpf.GetBitsStored() < pf.GetBitsStored() )
+              {
+              Bitmap *i = const_cast<Bitmap*>(this);
+              gdcmWarningMacro( "Encapsulated stream has fewer bits actually stored on disk. correcting." );
+              i->GetPixelFormat().SetBitsAllocated( cpf.GetBitsAllocated() );
+              i->GetPixelFormat().SetBitsStored( cpf.GetBitsStored() );
+              }
+            else if( cpf.GetBitsStored() > pf.GetBitsStored() )
+              {
+              Bitmap *i = const_cast<Bitmap*>(this);
+              gdcmWarningMacro( "Encapsulated stream has more bits actually stored on disk. correcting." );
+              i->GetPixelFormat().SetBitsAllocated( cpf.GetBitsAllocated() );
+              i->GetPixelFormat().SetBitsStored( cpf.GetBitsStored() );
+              }
+            }
+          }
+        }
+      else
+        {
+        gdcmWarningMacro( "Bits Allocated are different. This is pretty bad using info from codestream" );
+        Bitmap *i = const_cast<Bitmap*>(this);
+        i->SetPixelFormat( codec.GetPixelFormat() );
+        }
 
     return r;
     }
@@ -702,7 +786,7 @@ bool Bitmap::IsLossy() const
 bool Bitmap::ComputeLossyFlag()
 {
   bool lossyflag;
-  if( this->GetBufferInternal(0, lossyflag) )
+  if( this->GetBufferInternal(nullptr, lossyflag) )
     {
     LossyFlag = lossyflag;
     return true;
@@ -723,6 +807,7 @@ bool Bitmap::TryJPEG2000Codec(char *buffer, bool &lossyflag) const
       const SequenceOfFragments *sf = PixelData.GetSequenceOfFragments();
       if( !sf ) return false;
       const Fragment &frag = sf->GetFragment(0);
+      if( frag.IsEmpty() ) return false;
       const ByteValue &bv2 = dynamic_cast<const ByteValue&>(frag.GetValue());
 
       bool b = codec.GetHeaderInfo( bv2.GetPointer(), bv2.GetLength() , ts2 );
@@ -750,8 +835,17 @@ bool Bitmap::TryJPEG2000Codec(char *buffer, bool &lossyflag) const
             {
             if( cpf.GetBitsStored() < pf.GetBitsStored() )
               {
-              Bitmap *i = (Bitmap*)this;
+              Bitmap *i = const_cast<Bitmap*>(this);
               gdcmWarningMacro( "Encapsulated stream has fewer bits actually stored on disk. correcting." );
+              i->GetPixelFormat().SetBitsAllocated( cpf.GetBitsAllocated() );
+              i->GetPixelFormat().SetBitsStored( cpf.GetBitsStored() );
+              }
+            else if( cpf.GetBitsStored() > pf.GetBitsStored() )
+              {
+              // Osirix10vs8BitsStored.dcm
+              Bitmap *i = const_cast<Bitmap*>(this);
+              gdcmWarningMacro( "Encapsulated stream has more bits actually stored on disk. correcting." );
+              i->GetPixelFormat().SetBitsAllocated( cpf.GetBitsAllocated() );
               i->GetPixelFormat().SetBitsStored( cpf.GetBitsStored() );
               }
             }
@@ -761,7 +855,7 @@ bool Bitmap::TryJPEG2000Codec(char *buffer, bool &lossyflag) const
         {
         // SC16BitsAllocated_8BitsStoredJ2K.dcm
         gdcmWarningMacro( "Bits Allocated are different. This is pretty bad using info from codestream" );
-        Bitmap *i = (Bitmap*)this;
+        Bitmap *i = const_cast<Bitmap*>(this);
         i->SetPixelFormat( codec.GetPixelFormat() );
         }
 #endif
@@ -789,7 +883,7 @@ bool Bitmap::TryJPEG2000Codec(char *buffer, bool &lossyflag) const
     unsigned long check = outbv->GetLength();  // FIXME
     (void)check;
     assert( len <= outbv->GetLength() );
-    if(buffer) memcpy(buffer, outbv->GetPointer(), len /*outbv->GetLength()*/ );  // FIXME
+    memcpy(buffer, outbv->GetPointer(), len /*outbv->GetLength()*/ );  // FIXME
 
     lossyflag = codec.IsLossy();
     if( codec.IsLossy() && !ts.IsLossy() )
@@ -817,7 +911,7 @@ bool Bitmap::TryJPEG2000Codec(char *buffer, bool &lossyflag) const
             {
             if( cpf.GetBitsStored() < pf.GetBitsStored() )
               {
-              Bitmap *i = (Bitmap*)this;
+              Bitmap *i = const_cast<Bitmap*>(this);
               gdcmWarningMacro( "Encapsulated stream has fewer bits actually stored on disk. correcting." );
               i->GetPixelFormat().SetBitsStored( cpf.GetBitsStored() );
               }
@@ -892,7 +986,7 @@ bool Bitmap::TryRLECodec(char *buffer, bool &lossyflag ) const
   return false;
 }
 
-// Acces the raw data
+// Access the raw data
 bool Bitmap::GetBuffer(char *buffer) const
 {
   bool dummy;
@@ -912,7 +1006,7 @@ bool Bitmap::GetBufferInternal(char *buffer, bool &lossyflag) const
   //if( !success ) success = TryDeltaEncodingCodec(buffer);
   if( !success )
     {
-    buffer = 0;
+    buffer = nullptr;
     //throw Exception( "No codec found for this image");
     }
 

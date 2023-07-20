@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -333,7 +333,7 @@ void ULTransitionTable::HandleEvent(Subject *s, ULEvent& inEvent, ULConnection& 
       {
       if ( mTable[eventID].transitions[stateIndex] )
         {
-        if (mTable[eventID].transitions[stateIndex]->mAction != NULL)
+        if (mTable[eventID].transitions[stateIndex]->mAction != nullptr)
           {
           gdcmDebugMacro( "Process: Event:" << (int)eventID << ", State:" << stateIndex );
           inConnection.SetState(mTable[eventID].transitions[stateIndex]->mAction->

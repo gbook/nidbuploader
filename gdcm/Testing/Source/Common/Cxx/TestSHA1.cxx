@@ -222,7 +222,7 @@ static const char * const gdcmSHA1SumFiles[][2] = {
 { "c14634b31dc52e4ed2b0c626aa61af4de207f6e4"  , "TOSHIBA_J2K_SIZ1_PixRep0.dcm" },
 { "bf68f33e0922508d6075f0893298d339d817aa86"  , "TOSHIBA_J2K_OpenJPEGv2Regression.dcm" },
 { "6d21ac7b5b4ad32b7d91750a70b574a732b679a7"  , "TOSHIBA_J2K_SIZ0_PixRep1.dcm" },
-{ "94cadb9e79e0d04f3c212cf6fa069b3cf3f09a76"  , "NM-PAL-16-PixRep1.dcm" },
+{ "3bfbd040e8b9a98b294e95cb6f3c06b2a5d8b008"  , "NM-PAL-16-PixRep1.dcm" },
 { "156463350047cada3ec091396695d3f3ef660c9a"  , "MEDILABInvalidCP246_EVRLESQasUN.dcm" },
 { "9775e8206011b9d5cedfcba16946060cb047f826"  , "JPEGInvalidSecondFrag.dcm" },
 { "d17a34f8ae066048442ab5b110d43c412472ea7e"  , "SC16BitsAllocated_8BitsStoredJ2K.dcm" },
@@ -236,6 +236,15 @@ static const char * const gdcmSHA1SumFiles[][2] = {
 { "99c169688190a66100b61319eaeefb3db1936125" , "RLEDebianBug816607Orig.dcm" },
 { "f18f91631b59f0242b5daca547878e4c5cbf6a5b" , "GE_MR_0025xx1bProtocolDataBlockXML.dcm" },
 { "8c46efd571b33264d7c0bed14fb6dd0282330b92" , "JPEGLS_CharLS_10742.dcm" },
+{ "f52cac75e6371a8a9b70b2146811b52593cef774" , "EmptyIcon_Bug417.dcm" },
+{ "fbca7c76d8c290d6a07aff378526463185b391d0" , "EnhancedWithIPPPerFrameIOPShared.dcm" },
+{ "566387063a28df033d891ac48a42dbb3f6b6a65f" , "FUJI-ffff-MONO1-J2K.dcm" },
+{ "cb4be6eb5b38940067a1b74ca0360bbb8c66c449" , "JPEGLosslessSeNonZero.dcm" },
+{ "53137beb3f73345771ff853d670addd81e58906e" , "US-YBR_FULL_422-EVRLE.dcm" },
+{ "78088c2bfe34911c46476f5fd110c9e0d9813044" , "Osirix10vs8BitsStored.dcm" },
+{ "31f0556c75829dee3850414e166863220f9e03da" , "Bug_Siemens_PrivateIconNoItem.dcm" },
+{ "129b3cebd15fd1edb55c8fae75976501f2601dce" , "HardcopyColor_YBR_RCT_J2K_PC1.dcm" },
+{ "2ac195a776c8cb9f0e6eb2e297bd2bf37bb11697" , "PET-GE-dicomwrite-PixelDataSQUNv2.dcm" },
 
 { NULL, NULL}
 };

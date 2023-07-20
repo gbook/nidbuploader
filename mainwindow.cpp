@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
     WriteLog("Entering MainWindow()");
     ui->setupUi(this);
     this->showMaximized();
-    qsrand(static_cast<uint>(QTime::currentTime().msec()));
+    //qsrand(static_cast<uint>(QTime::currentTime().msec()));
 
     numNetConn = 0;
 
@@ -155,7 +155,7 @@ void MainWindow::on_pushButton_clicked()
     QFile file("connections.txt");
     file.open(QIODevice::Append | QIODevice::Text);
     QTextStream out(&file);
-    out << server << "\t" << username << "\t" << phash.toHex().toUpper() << endl;
+    out << QString(server + "\t" + username + "\t" + phash.toHex().toUpper() + "\n");
     file.close();
 
     PopulateConnectionList();
@@ -184,8 +184,7 @@ void MainWindow::on_btnTestConn_clicked()
         url.setUrl(connServer + "/api.php");
         QNetworkRequest request(url);
         request.setHeader(QNetworkRequest::ContentTypeHeader,"application/x-www-form-urlencoded");
-        postData.append('u').append("=").append(connUsername).append("&");
-        postData.append('p').append("=").append(connPassword);
+        postData += QString("u=%1&p=%2").arg(connUsername).arg(connPassword).toUtf8();
 
         WriteLog("about to send the test POST in on_btnTestConn_clicked()");
         /* submit the POST request and setup the reply/error handlers */
@@ -538,11 +537,11 @@ void MainWindow::GetFileType(QString f, QString &fileType, QString &fileModality
                {
                   QString line = in.readLine();
                   if (line.contains("Patient name")) {
-                      QStringList parts = line.split(":",QString::SkipEmptyParts);
+                        QStringList parts = line.split(":",Qt::SkipEmptyParts);
                       filePatientID = parts[1].trimmed();
                   }
                   if (line.contains("Protocol name")) {
-                      QStringList parts = line.split(":",QString::SkipEmptyParts);
+                      QStringList parts = line.split(":",Qt::SkipEmptyParts);
                       fileProtocol = parts[1].trimmed();
                   }
                   if (line.toUpper().contains("MRSERIES")) {
@@ -607,7 +606,7 @@ bool MainWindow::AddFoundFile(QDirIterator *it, QString f, QString fType, QStrin
     /* get some info about the file */
     info = it->fileInfo();
     size += info.size();
-    cDate = info.created().toString();
+    cDate = info.birthTime().toString();
     sSize = humanReadableSize(static_cast<quint64>(size));
 
     /* add a row to the table and populate it with info */
@@ -751,7 +750,8 @@ void MainWindow::DoUpload(bool uploadAll) {
     }
     QTextStream out(&txnfile);
     QDateTime current = QDateTime::currentDateTime();
-    out << current.toString("ddd MMMM d yyyy h:mm:ss ap") << "," << transactionNumber << "," << connServer << "," << connUsername << "," << connPassword << endl;
+    QString str = QString("%1,%2,%3,%4,%5\n").arg(current.toString("ddd MMMM d yyyy h:mm:ss ap")).arg(transactionNumber).arg(connServer).arg(connUsername).arg(connPassword);
+    out << str;
 
     /* this will anonymize and then upload all of the files in the list */
     int rowCount = ui->tableFiles->rowCount();
@@ -905,7 +905,8 @@ void MainWindow::AnonymizeAndUpload(QVector<int> list, bool isDICOM, bool isPARR
                 replace_tags_value.push_back( std::make_pair(tag, newTagVal.toStdString().c_str()) );
 
                 QTextStream out(&idfile);
-                out << "Orig ID: [" << tagValOrig << "]  New ID: [" << newTagVal << "]" << endl;
+                QString str = QString("Orig ID: [%1]  New ID: [%2]\n").arg(tagValOrig).arg(newTagVal);
+                out << str;
             }
 
             /* check if the patient birthdate should be replaced */
@@ -1306,21 +1307,19 @@ void MainWindow::progressChanged(qint64 a, qint64 b)
 }
 
 
-/* ------------------------------------------------- */
-/* --------- GenerateRandomString ------------------ */
-/* ------------------------------------------------- */
-QString MainWindow::GenerateRandomString(int len)
-{
-   const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+/* ---------------------------------------------------------- */
+/* --------- GenerateRandomString --------------------------- */
+/* ---------------------------------------------------------- */
+QString MainWindow::GenerateRandomString(int n) {
 
-   QString randomString;
-   for(int i=0; i<len; ++i)
-   {
-       int index = qrand() % possibleCharacters.length();
-       QChar nextChar = possibleCharacters.at(index);
-       randomString.append(nextChar);
-   }
-   return randomString;
+    const QString chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+    QString randomString;
+    for(int i=0; i<n; ++i)
+    {
+        QChar nextChar = chars.at(QRandomGenerator::global()->bounded(chars.length()-1));
+        randomString.append(nextChar);
+    }
+    return randomString;
 }
 
 
@@ -1923,15 +1922,15 @@ QString MainWindow::humanReadableSize(quint64 intSize)
 void MainWindow::on_btnRemoveSelected_clicked()
 {
 
-    QSet<int> selectedRows; //we use a set to prevent doubles
+    QList<int> selectedRows; //we use a set to prevent doubles
     QList<QTableWidgetItem*> itemList = ui->tableFiles->selectedItems();
     QTableWidgetItem * item;
     foreach(item, itemList)
-        selectedRows.insert(item->row());
+        selectedRows.append(item->row());
 
     /* get a list, and sort it big to small */
-    QList<int> rows = selectedRows.toList();
-    qSort(rows.begin(), rows.end(), qGreater<int>());
+    QList<int> rows = selectedRows;
+    std::sort(rows.begin(), rows.end());
 
     /* now actually do the removing */
     foreach(int row, rows)
@@ -1990,7 +1989,7 @@ void MainWindow::WriteLog(QString msg)
 {
     /* print to file and to the log window */
     QTextStream out(&logfile);
-    out << "[" << QTime::currentTime().toString() << "] " << msg << endl;
+    out << QString("[%1] %2\n").arg(QTime::currentTime().toString()).arg(msg);
     qDebug() << msg;
 }
 

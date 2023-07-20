@@ -157,7 +157,7 @@ static const StreamOffset gdcmSelectedTagsOffsetDataFiles[] = {
 { "MR_SIEMENS_forceLoad29-1010_29-1020.dcm",60556 },
 { "MR_Spectroscopy_SIEMENS_OF.dcm",2102344 },
 { "NM-MONO2-16-13x-heart.dcm",1222 },
-{ "NM-PAL-16-PixRep1.dcm",4432 },
+{ "NM-PAL-16-PixRep1.dcm", 4456},
 { "NM_Kakadu44_SOTmarkerincons.dcm",1564 },
 { "OT-MONO2-8-a7.dcm",430 },
 { "OT-PAL-8-face.dcm",1646 },
@@ -233,6 +233,15 @@ static const StreamOffset gdcmSelectedTagsOffsetDataFiles[] = {
 { "JPEG_LS_InvalidEscapeSequence_COM_padding.dcm", 752 },
 { "LengthOfItemLarger.dcm", 12748 },
 { "GE_MR_0025xx1bProtocolDataBlockXML.dcm",6462 },
+{ "EmptyIcon_Bug417.dcm",4470},
+{ "EnhancedWithIPPPerFrameIOPShared.dcm",23212},
+{ "FUJI-ffff-MONO1-J2K.dcm",2040},
+{ "JPEGLosslessSeNonZero.dcm",748},
+{ "US-YBR_FULL_422-EVRLE.dcm",1542},
+{ "Osirix10vs8BitsStored.dcm",73966},
+{ "Bug_Siemens_PrivateIconNoItem.dcm",12966},
+{ "HardcopyColor_YBR_RCT_J2K_PC1.dcm",2614},
+{ "PET-GE-dicomwrite-PixelDataSQUNv2.dcm",7706},
 { "dicomdir_Acusson_WithPrivate_WithSR",3826 },
 { "dicomdir_Pms_WithVisit_WithPrivate_WithStudyComponents",37218 },
 { "dicomdir_Pms_With_heavy_embedded_sequence",3003414 },
@@ -242,5 +251,5 @@ static const StreamOffset gdcmSelectedTagsOffsetDataFiles[] = {
 { "DICOMDIR_MR_B_VA12A",14853880 },
 
 /* Stopping condition */
-{ 0 ,0 },
+{ nullptr ,0 },
 };

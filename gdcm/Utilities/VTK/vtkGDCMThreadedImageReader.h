@@ -18,7 +18,7 @@
 // read approx N times faster than when reading in a single thread.
 //
 // .SECTION Warning: Advanced users only. Do not use this class in the general case,
-// you have to understand how physicaly medium works first (sequential reading for
+// you have to understand how physically medium works first (sequential reading for
 // instance) before playing with this class
 //
 // .SECTION Implementation note: when FileLowerLeft is set to on the image is not flipped
@@ -38,6 +38,7 @@
 #define VTKGDCMTHREADEDIMAGEREADER_H
 
 #include "vtkGDCMImageReader.h"
+#include "vtkVersion.h"
 
 class VTK_EXPORT vtkGDCMThreadedImageReader : public vtkGDCMImageReader
 {

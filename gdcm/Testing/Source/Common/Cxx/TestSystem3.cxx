@@ -29,13 +29,13 @@ int TestSystem3(int, char *[])
   char *saveptr1;
 
   std::vector< std::string > v;
-  for (str1 = query; ; str1 = NULL)
+  for (str1 = query; ; str1 = nullptr)
     {
     token = gdcm::System::StrTokR(str1, delim, &saveptr1);
-    if (token == NULL)
+    if (token == nullptr)
       break;
     //std::cout << "[" << token << "]" << std::endl;
-    v.push_back( token );
+    v.emplace_back(token );
     }
   free( query );
 
@@ -49,14 +49,14 @@ int TestSystem3(int, char *[])
   char *string = strdup( isostr );
   if(!string) return 1;
   char *copy = string;
-  while ((token = gdcm::System::StrSep(&string, delim)) != NULL)
+  while ((token = gdcm::System::StrSep(&string, delim)) != nullptr)
     {
     //printf("token=%s\n", token);
-    v.push_back( token );
+    v.emplace_back(token );
     }
   free( copy );
   if( v.size() != 3 ) return 1;
-  if( v[0] != "" ) return 1;
+  if( !v[0].empty() ) return 1;
   if( v[1] != "ISO 2022 IR 13" ) return 1;
   if( v[2] != "ISO 2022 IR 87" ) return 1;
 }

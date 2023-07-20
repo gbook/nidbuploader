@@ -72,7 +72,7 @@ void TableReader::HandleMacroEntryDescription(const char **atts)
   (void)atts;
   assert( ParsingMacroEntryDescription == false );
   ParsingMacroEntryDescription = true;
-  assert( *atts == NULL );
+  assert( *atts == nullptr );
   assert( Description == "" );
 }
 
@@ -91,7 +91,7 @@ void TableReader::HandleModuleEntryDescription(const char **atts)
   (void)atts;
   assert( ParsingModuleEntryDescription == false );
   ParsingModuleEntryDescription = true;
-  assert( *atts == NULL );
+  assert( *atts == nullptr );
   assert( Description == "" );
 }
 
@@ -577,7 +577,7 @@ int TableReader::Read()
   std::ifstream is( Filename.c_str(), std::ios::binary );
 
   char buf[BUFSIZ];
-  XML_Parser parser = XML_ParserCreate(NULL);
+  XML_Parser parser = XML_ParserCreate(nullptr);
   int done;
   //int depth = 0;
   XML_SetUserData(parser, this);
@@ -586,7 +586,7 @@ int TableReader::Read()
   int ret = 0;
   do {
     is.read(buf, sizeof(buf));
-	  std::streamsize len = is.gcount();
+    std::streamsize len = is.gcount();
     done = (unsigned int)len < sizeof(buf);
     if (XML_Parse(parser, buf, (int)len, done) == XML_STATUS_ERROR) {
       fprintf(stderr,

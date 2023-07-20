@@ -196,9 +196,14 @@
 #include "gdcmJSON.h"
 #include "gdcmFileDecompressLookupTable.h"
 #include "gdcmEmptyMaskGenerator.h"
+#include "gdcmEquipmentManufacturer.h"
 
 using namespace gdcm;
 %}
+
+#if SWIG_VERSION < 0x030011
+#define override
+#endif
 
 //%insert("runtime") %{
 //#include "myheader.h"
@@ -219,6 +224,8 @@ using namespace gdcm;
 %include "std_pair.i"
 %include "std_map.i"
 %include "exception.i"
+
+%include "pybuffer.i"
 
 // operator= is not needed in python AFAIK
 %ignore operator=;                      // Ignore = everywhere.
@@ -759,7 +766,22 @@ EXTEND_CLASS_PRINT(gdcm::ModuleEntry)
 //%feature("director") Codec;
 //%include "gdcmCodec.h"
 %feature("director") ImageCodec;
+%typemap(in) const unsigned int d[3] (unsigned int temp[3]) {
+  int i;
+  if (PyTuple_Check($input)) {
+    if (!PyArg_ParseTuple($input,"iii",temp,temp+1,temp+2)) {
+      PyErr_SetString(PyExc_TypeError,"tuple must have 3 elements");
+      return NULL;
+    }
+    $1 = &temp[0];
+  } else {
+    PyErr_SetString(PyExc_TypeError,"expected a tuple.");
+    return NULL;
+  }
+}
+%ignore gdcm::ImageCodec::SetDimensions(const std::vector<unsigned int> &);
 %include "gdcmImageCodec.h"
+%clear const unsigned int d[3];
 %include "gdcmRLECodec.h"
 %include "gdcmJPEGCodec.h"
 %include "gdcmJPEGLSCodec.h"
@@ -818,9 +840,10 @@ typedef int64_t time_t; // FIXME
 EXTEND_CLASS_PRINT(gdcm::Region)
 %include "gdcmBoxRegion.h"
 EXTEND_CLASS_PRINT(gdcm::BoxRegion)
-%apply char[] { char* inreadbuffer }
+%pybuffer_mutable_binary(char *inreadbuffer, size_t buflen);
 %include "gdcmImageRegionReader.h"
 %clear char* inreadbuffer;
 %include "gdcmJSON.h"
 %include "gdcmFileDecompressLookupTable.h"
 %include "gdcmEmptyMaskGenerator.h"
+%include "gdcmEquipmentManufacturer.h"

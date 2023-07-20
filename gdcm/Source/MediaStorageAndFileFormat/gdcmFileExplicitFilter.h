@@ -25,7 +25,7 @@ class Dicts;
  * \details After changing a file from Implicit to Explicit representation (see
  * ImageChangeTransferSyntax) one operation is to make sure the VR of each
  * DICOM attribute are accurate and do match the one from PS 3.6. Indeed when a
- * file is written in Implicit reprensentation, the VR is not stored directly
+ * file is written in Implicit representation, the VR is not stored directly
  * in the file.
  *
  * \warning changing an implicit dataset to an explicit dataset is NOT a
@@ -39,7 +39,7 @@ class GDCM_EXPORT FileExplicitFilter
 {
 public:
   FileExplicitFilter():F(new File),ChangePrivateTags(false),UseVRUN(true),RecomputeItemLength(false),RecomputeSequenceLength(false) {}
-  ~FileExplicitFilter() {}
+  ~FileExplicitFilter() = default;
 
   /// Decide whether or not to VR'ify private tags
   void SetChangePrivateTags(bool b) { ChangePrivateTags = b;}

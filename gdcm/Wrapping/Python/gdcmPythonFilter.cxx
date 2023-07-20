@@ -38,8 +38,12 @@ void PythonFilter::SetDicts(const Dicts &dicts)
   assert(0); // FIXME
 }
 
+void PythonFilter::SetFile(const File& f) { F = f; }
+File &PythonFilter::GetFile() { return *F; }
+const File &PythonFilter::GetFile() const { return *F; }
+
 static const char *PythonTypesFromVR[] = {
-0, //  "??",        // 0
+nullptr, //  "??",        // 0
 "s", //  "AE",        // 1
 "s", //  "AS",        // 2
 "(ii)", //  "AT",        // 3
@@ -75,7 +79,7 @@ const char *GetPythonTypeFromVR(VR const &vr)
   switch(vr)
     {
     case VR::INVALID:
-      s = 0;
+      s = nullptr;
       break;
     case VR::AE:
       s = "s";
@@ -160,7 +164,7 @@ const char *GetPythonTypeFromVR(VR const &vr)
       break;
     default:
       assert( 0 );
-      s = 0;
+      s = nullptr;
     }
   return s;
 }
@@ -186,7 +190,7 @@ PyObject *DataElementToPyObject(DataElement const &de, VR const &vr)
       PyObject *o;
       if( count == 0 )
       {
-              o = 0;
+              o = nullptr;
       }
       else if( count == 1 )
       {
@@ -221,11 +225,11 @@ PyObject *PythonFilter::ToPyObject(const Tag& t) const
   if( ds.IsEmpty() || !ds.FindDataElement(t) )
     {
     gdcmWarningMacro( "DataSet is empty or does not contains tag:" );
-    return 0;
+    return nullptr;
     }
   if( t.IsPrivate() )
     {
-    return 0;
+    return nullptr;
     }
 
   const DataElement &de = ds.GetDataElement( t );
@@ -235,7 +239,7 @@ PyObject *PythonFilter::ToPyObject(const Tag& t) const
     {
     // FIXME This is a public element we do not support...
     //throw Exception();
-    return 0;
+    return nullptr;
     }
 
   VR vr = entry.GetVR();
@@ -252,7 +256,7 @@ PyObject *PythonFilter::ToPyObject(const Tag& t) const
     //assert( vr & VR::VRASCII );
     if( de.IsEmpty() )
       {
-      return 0;
+      return nullptr;
       }
     else
       {

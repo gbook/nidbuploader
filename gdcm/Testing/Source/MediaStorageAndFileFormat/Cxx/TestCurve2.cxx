@@ -62,7 +62,7 @@ static const curveel *getcurveelfromname(const char *filename)
       return &c;
       }
     }
-  return NULL;
+  return nullptr;
 }
 
 static int TestCurve2Read(const char* filename, bool verbose = false)
@@ -81,9 +81,9 @@ static int TestCurve2Read(const char* filename, bool verbose = false)
   if( numcurves )
     {
     const curveel *c = getcurveelfromname( fn.GetName() );
-    if( c == NULL )
+    if( c == nullptr )
       {
-      std::cerr << "Cant find: " << filename << std::endl;
+      std::cerr << "Can't find: " << filename << std::endl;
       return 1;
       }
     if( c->numcurves != numcurves )

@@ -23,6 +23,10 @@
 #include "gdcmExplicitDataElement.h"
 #include "gdcmImplicitDataElement.h"
 
+#ifdef _MSC_VER
+#include <windows.h> // MultiByteToWideChar
+#endif
+
 #ifdef GDCM_SUPPORT_BROKEN_IMPLEMENTATION
 #include "gdcmUNExplicitDataElement.h"
 #include "gdcmCP246ExplicitDataElement.h"
@@ -37,8 +41,8 @@ namespace gdcm_ns
 
 Reader::Reader():F(new File)
 {
-  Stream = NULL;
-  Ifstream = NULL;
+  Stream = nullptr;
+  Ifstream = nullptr;
 }
 
 Reader::~Reader()
@@ -47,8 +51,8 @@ Reader::~Reader()
     {
     Ifstream->close();
     delete Ifstream;
-    Ifstream = NULL;
-    Stream = NULL;
+    Ifstream = nullptr;
+    Stream = nullptr;
     }
 }
 
@@ -168,7 +172,7 @@ TransferSyntax Reader::GuessTransferSyntax()
       {
       nts = TransferSyntax::Implicit;
       // We are reading a private creator (0x0010) so it's LO, it's
-      // difficult to come up with someting to check, maybe that
+      // difficult to come up with something to check, maybe that
       // VL < 256 ...
       gdcmWarningMacro( "Very dangerous assertion needs some work" );
       }
@@ -731,6 +735,8 @@ static inline bool isasciiupper( char c ) {
 // scope of this function.
 bool Reader::CanRead() const
 {
+  if( !Stream ) return false;
+
   // fastpath
   std::istream &is = *Stream;
   if( is.bad() ) return false;
@@ -823,11 +829,18 @@ bool Reader::CanRead() const
   return false;
 }
 
-void Reader::SetFileName(const char *filename)
+void Reader::SetFileName(const char *utf8path)
 {
   if(Ifstream) delete Ifstream;
   Ifstream = new std::ifstream();
-  Ifstream->open(filename, std::ios::binary);
+  if (utf8path && *utf8path) {
+#ifdef _MSC_VER
+    const std::wstring uncpath = System::ConvertToUNC(utf8path);
+    Ifstream->open(uncpath.c_str(), std::ios::binary);
+#else
+    Ifstream->open( utf8path, std::ios::binary);
+#endif
+  }
   if( Ifstream->is_open() )
     {
     Stream = Ifstream;
@@ -836,8 +849,8 @@ void Reader::SetFileName(const char *filename)
   else
     {
     delete Ifstream;
-    Ifstream = NULL;
-    Stream = NULL;
+    Ifstream = nullptr;
+    Stream = nullptr;
     }
 }
 

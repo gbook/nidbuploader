@@ -19,7 +19,7 @@
  * - dcmInfo (SIEMENS)
  * - PrintFile (GDCM 1.x)
  *
- * For now all layout are harcoded (see --color/--xml-dict for instance)
+ * For now all layout are hardcoded (see --color/--xml-dict for instance)
  *
  * gdcmdump has some feature not described in the DICOM standard:
  *   --csa : to print CSA information (dcmInfo.exe compatible)
@@ -139,8 +139,8 @@ static void printbinary(std::istream &is, PDFElement const & pdfel )
   std::cout << "  " << bufferref << " ";
   uint32_t type = pdfel.gettype();
   uint32_t numels = pdfel.getnumelems();
-  uint32_t dummy = pdfel.getdummy();
-  assert( dummy == 0 ); (void)dummy;
+  //uint32_t dummy = pdfel.getdummy();
+  //assert( dummy == 0 ); (void)dummy;
   uint32_t offset = pdfel.getoffset();
   uint32_t pos = (uint32_t)(offset + is.tellg() - 4);
   printvalue(is, type, numels, pos);
@@ -190,7 +190,7 @@ static void ProcessSDSDataString( std::istream & is )
 
 static void ProcessSDSData( std::istream & is )
 {
-  // havent been able to figure out what was the begin meant for
+  // haven't been able to figure out what was the begin meant for
   is.seekg( 0x20 - 8 );
   uint32_t version = 0;
   assert( sizeof(uint32_t) == 4 );
@@ -337,6 +337,65 @@ static int DumpTOSHIBA_MEC_CT3(const gdcm::DataSet & ds)
   return 0;
 }
 
+static bool DumpToshibaDTI( const char * input, size_t len )
+{
+  if( len % 2 ) return false;
+
+  std::vector<char> copy( input, input + len );
+  std::reverse( copy.begin(), copy.end() );
+
+  std::istringstream is;
+  std::string dup( &copy[0], copy.size() );
+  is.str( dup );
+
+  gdcm::File file;
+  gdcm::FileMetaInformation & fmi = file.GetHeader();
+  fmi.SetDataSetTransferSyntax( gdcm::TransferSyntax::ExplicitVRLittleEndian );
+  gdcm::DataSet & ds = file.GetDataSet();
+  ds.Read<gdcm::ExplicitDataElement,gdcm::SwapperNoOp>( is );
+
+  gdcm::Printer p;
+  p.SetFile( file );
+  p.SetColor( color != 0 );
+  p.Print( std::cout );
+
+  return true;
+}
+
+
+static int DumpTOSHIBA_Reverse(const gdcm::DataSet & ds, const gdcm::PrivateTag &tpmtf, const gdcm::PrivateTag &tseq)
+{
+  // (0029,0010) ?? (LO) [PMTF INFORMATION DATA ]                      # 22,1 Private Creator
+  // (0029,1001) ?? (SQ) (Sequence with undefined length)              # u/l,1 ?
+
+  if( !ds.FindDataElement( tpmtf) ) return 1;
+  const gdcm::DataElement& pmtf = ds.GetDataElement( tpmtf );
+  if ( pmtf.IsEmpty() ) return 1;
+  gdcm::SmartPointer<gdcm::SequenceOfItems> seq = pmtf.GetValueAsSQ();
+  if ( !seq || !seq->GetNumberOfItems() ) return 1;
+
+  size_t n = seq->GetNumberOfItems();
+  for( size_t i = 1; i <= n; ++i )
+    {
+    std::cout << "Item #" << i << std::endl;
+    gdcm::Item &item = seq->GetItem(i);
+    gdcm::DataSet &subds = item.GetNestedDataSet();
+    // (0029,0010) ?? (LO) [PMTF INFORMATION DATA ]                  # 22,1 Private Creator
+    // (0029,1090) ?? (OB) 00\05\00\13\00\12\00\22\                  # 202,1 ?
+
+    if( subds.FindDataElement( tseq ) )
+      {
+      const gdcm::DataElement & de = subds.GetDataElement( tseq );
+      const gdcm::ByteValue * bv = de.GetByteValue();
+      if( !bv ) return 1;
+
+      bool b = DumpToshibaDTI( bv->GetPointer(), bv->GetLength() );
+      if( !b ) return 1;
+      }
+    }
+  return 0;
+}
+
 // VEPRO
 /*
 [VIMDATA2]
@@ -476,7 +535,7 @@ static bool ProcessData( const char *buf, size_t len )
 static int DumpVEPRO(const gdcm::DataSet & ds)
 {
   // 01f7,1026
-  const gdcm::ByteValue *bv2 = NULL;
+  const gdcm::ByteValue *bv2 = nullptr;
   const gdcm::PrivateTag tdata1(0x55,0x0020,"VEPRO VIF 3.0 DATA");
   const gdcm::PrivateTag tdata2(0x55,0x0020,"VEPRO VIM 5.0 DATA");
   // Prefer VIF over VIM ?
@@ -790,6 +849,49 @@ static int PrintCT3(const std::string & filename, bool verbose)
   return ret;
 }
 
+static int PrintPMTF(const std::string & filename, bool verbose)
+{
+  (void)verbose;
+  gdcm::Reader reader;
+  reader.SetFileName( filename.c_str() );
+  if( !reader.Read() )
+    {
+    std::cerr << "Failed to read: " << filename << std::endl;
+    return 1;
+    }
+
+  const gdcm::DataSet& ds = reader.GetFile().GetDataSet();
+  const gdcm::PrivateTag tpmtf(0x0029,0x1,"PMTF INFORMATION DATA");
+  const gdcm::PrivateTag tseq(0x0029,0x90,"PMTF INFORMATION DATA");
+  int ret = cleanup::DumpTOSHIBA_Reverse( ds, tpmtf, tseq );
+
+  return ret;
+}
+
+static int PrintMECMR3(const std::string & filename, bool verbose)
+{
+  (void)verbose;
+  gdcm::Reader reader;
+  reader.SetFileName( filename.c_str() );
+  if( !reader.Read() )
+    {
+    std::cerr << "Failed to read: " << filename << std::endl;
+    return 1;
+    }
+
+  const gdcm::DataSet& ds = reader.GetFile().GetDataSet();
+  const gdcm::PrivateTag tpmtf(0x0029,0x1,"TOSHIBA_MEC_MR3");
+  const gdcm::PrivateTag tseq(0x0029,0x90,"TOSHIBA_MEC_MR3");
+  int ret = cleanup::DumpTOSHIBA_Reverse( ds, tpmtf, tseq );
+
+  const gdcm::PrivateTag tpmtf2(0x0029,0x2,"TOSHIBA_MEC_MR3");
+  int ret2 = cleanup::DumpTOSHIBA_Reverse( ds, tpmtf2, tseq );
+
+  return ret +ret2;
+}
+
+
+
 static int PrintPDB(const std::string & filename, bool verbose)
 {
   (void)verbose;
@@ -1001,13 +1103,13 @@ static int PrintMrProtocol(const std::string & filename)
   {
     const gdcm::DataElement &shared = ds.GetDataElement( sfgs.GetTag() );
     gdcm::SmartPointer<gdcm::SequenceOfItems> sqi = shared.GetValueAsSQ();
-    if( sqi != NULL && sqi->GetNumberOfItems() == 1 ) {
+    if( sqi != nullptr && sqi->GetNumberOfItems() == 1 ) {
       gdcm::Item &item = sqi->GetItem(1);
       gdcm::DataSet & subds = item.GetNestedDataSet();
       if( subds.FindDataElement( att2) ) {
         const gdcm::DataElement &privsq = subds.GetDataElement( att2 );
         gdcm::SmartPointer<gdcm::SequenceOfItems> sqi2 = privsq.GetValueAsSQ();
-        if( sqi2 != NULL && sqi2->GetNumberOfItems() == 1 ) {
+        if( sqi2 != nullptr && sqi2->GetNumberOfItems() == 1 ) {
           gdcm::Item &item2 = sqi2->GetItem(1);
           gdcm::DataSet & subds2 = item2.GetNestedDataSet();
           if( subds2.FindDataElement( att1) ) {
@@ -1061,6 +1163,8 @@ static void PrintHelp()
   std::cout << "                         or VEPRO Protocol Information (0055,20,VEPRO VIM 5.0 DATA)." << std::endl;
   std::cout << "     --sds            print Philips MR Series Data Storage (1.3.46.670589.11.0.0.12.2) Information (2005,32,Philips MR Imaging DD 002)." << std::endl;
   std::cout << "     --ct3            print CT Private Data 2 (7005,10,TOSHIBA_MEC_CT3)." << std::endl;
+  std::cout << "     --pmtf           print PMTF INFORMATION DATA sub-sequences (0029,01,PMTF INFORMATION DATA)." << std::endl;
+  std::cout << "     --mecmr3         print TOSHIBA_MEC_MR3 sub-sequences (0029,01,TOSHIBA_MEC_MR3)." << std::endl;
   std::cout << "  -A --asn1           print encapsulated ASN1 structure >(0400,0520)." << std::endl;
   std::cout << "     --map-uid-names  map UID to names." << std::endl;
   std::cout << "General Options:" << std::endl;
@@ -1093,6 +1197,8 @@ int main (int argc, char *argv[])
   int printvepro = 0;
   int printsds = 0; // MR Series Data Storage
   int printct3 = 0; // TOSHIBA_MEC_CT3
+  int printpmtf = 0; // TOSHIBA / PMTF INFORMATION DATA
+  int printmecmr3 = 0; // TOSHIBA / TOSHIBA_MEC_MR3
   int verbose = 0;
   int warning = 0;
   int debug = 0;
@@ -1102,7 +1208,7 @@ int main (int argc, char *argv[])
   int recursive = 0;
   int printasn1 = 0;
   int mapuidnames = 0;
-  while (1) {
+  while (true) {
     //int this_option_optind = optind ? optind : 1;
     int option_index = 0;
 /*
@@ -1114,7 +1220,7 @@ int main (int argc, char *argv[])
           };
 */
     static struct option long_options[] = {
-        {"input", 1, 0, 0},
+        {"input", 1, nullptr, 0},
         {"xml-dict", 0, &printdict, 1},
         {"recursive", 0, &recursive, 1},
         {"print", 0, &print, 1},
@@ -1138,7 +1244,9 @@ int main (int argc, char *argv[])
         {"csa-asl", 0, &printcsaasl, 1},
         {"csa-diffusion", 0, &printcsadiffusion, 1},
         {"mrprotocol", 0, &printmrprotocol, 1},
-        {0, 0, 0, 0} // required
+        {"pmtf", 0, &printpmtf, 1},
+        {"mecmr3", 0, &printmecmr3, 1},
+        {nullptr, 0, nullptr, 0} // required
     };
     static const char short_options[] = "i:xrpdcCPAVWDEhvI";
     c = getopt_long (argc, argv, short_options,
@@ -1309,7 +1417,7 @@ int main (int argc, char *argv[])
     std::cerr << "Not handled for now" << std::endl;
     }
 
-  const char * csaname = NULL;
+  const char * csaname = nullptr;
   if( printcsaasl )
   {
     printcsabase64 = 1;
@@ -1354,6 +1462,14 @@ int main (int argc, char *argv[])
       else if( printct3 )
         {
         res += PrintCT3(*it, verbose!= 0);
+        }
+      else if( printpmtf )
+        {
+        res += PrintPMTF(*it, verbose!= 0);
+        }
+      else if( printmecmr3 )
+        {
+        res += PrintMECMR3(*it, verbose!= 0);
         }
       else if( printelscint )
         {
@@ -1409,6 +1525,14 @@ int main (int argc, char *argv[])
     else if( printct3 )
       {
       res += PrintCT3(filename, verbose!= 0);
+      }
+    else if( printpmtf )
+      {
+      res += PrintPMTF(filename, verbose!= 0);
+      }
+    else if( printmecmr3 )
+      {
+      res += PrintMECMR3(filename, verbose!= 0);
       }
     else if( printelscint )
       {

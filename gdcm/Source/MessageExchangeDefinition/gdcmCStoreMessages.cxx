@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -120,9 +120,9 @@ const DataSet* inDataSet = &file.GetDataSet();
   // the following make sure that the accepted Presentation Context match the actual encoding
   // of the current File
   // ADV: technically we could use an explicit VR encoded dataset and send it over
-  // an implicit TS accecpted Transfer syntax. However thing do not interchange well
+  // an implicit TS accepted Transfer syntax. However thing do not interchange well
   // so we really need a filter to check whether conversion is ok or not.
-  if( acpc == 0 )
+  if( acpc == nullptr )
     {
     // Technically we should fallback to something else. Anyway lets' give up
     // and hope the user will convert the encapsulated stream to something else...

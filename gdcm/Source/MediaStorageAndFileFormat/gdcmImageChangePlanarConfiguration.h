@@ -23,13 +23,13 @@ class DataElement;
 /**
  * \brief ImageChangePlanarConfiguration class
  * \details Class to change the Planar configuration of an input DICOM
- * By default it will change into the more usual reprensentation: PlanarConfiguration = 0
+ * By default it will change into the more usual representation: PlanarConfiguration = 0
  */
 class GDCM_EXPORT ImageChangePlanarConfiguration : public ImageToImageFilter
 {
 public:
   ImageChangePlanarConfiguration():PlanarConfiguration(0) {}
-  ~ImageChangePlanarConfiguration() {}
+  ~ImageChangePlanarConfiguration() = default;
 
   /// Set/Get requested PlanarConfigation
   void SetPlanarConfiguration(unsigned int pc) { PlanarConfiguration = pc; }

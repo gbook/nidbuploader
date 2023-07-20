@@ -29,7 +29,7 @@ class ImageRegionReaderInternals
 public:
   ImageRegionReaderInternals()
     {
-    TheRegion = NULL;
+    TheRegion = nullptr;
     Modified = false;
     FileOffset = -1;
     }
@@ -235,6 +235,7 @@ bool ImageRegionReader::ReadRAWIntoBuffer(char *buffer, size_t buflen)
   if( !theCodec.CanDecode( ts ) ) return false;
   theCodec.SetPlanarConfiguration(
     ImageHelper::GetPlanarConfigurationValue(GetFile()));
+  if( ImageHelper::GetPhotometricInterpretationValue(GetFile()) == PhotometricInterpretation::YBR_FULL_422 ) return false;
   theCodec.SetPhotometricInterpretation(
     ImageHelper::GetPhotometricInterpretationValue(GetFile()));
   //theCodec.SetLUT( GetLUT() );

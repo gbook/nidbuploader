@@ -66,7 +66,8 @@ void UpdatePhotometricInterpretation( Bitmap const &input, Bitmap &output )
     output.SetPhotometricInterpretation( PhotometricInterpretation::RGB );
     }
   // when decompressing loss jpeg, need to revert to proper photo inter in uncompressed TS:
-  if( input.GetPhotometricInterpretation() == PhotometricInterpretation::YBR_FULL_422 )
+  if( input.GetPhotometricInterpretation() == PhotometricInterpretation::YBR_FULL_422 
+   || input.GetPhotometricInterpretation() == PhotometricInterpretation::YBR_PARTIAL_422 )
     {
     output.SetPhotometricInterpretation( PhotometricInterpretation::YBR_FULL );
     }
@@ -257,12 +258,12 @@ bool ImageChangeTransferSyntax::TryJPEGLSCodec(const DataElement &pixelde, Bitma
     bool r;
     if( input.AreOverlaysInPixelData() || input.UnusedBitsPresentInPixelData() )
       {
-      const ByteValue *bv = pixelde.GetByteValue();
+      ByteValue *bv = const_cast<ByteValue*>(pixelde.GetByteValue());
       assert( bv );
       gdcm::DataElement tmp;
       tmp.SetByteValue( bv->GetPointer(), bv->GetLength());
-      bv = tmp.GetByteValue();
-      r = codec->CleanupUnusedBits((char*)bv->GetPointer(), bv->GetLength());
+      bv = const_cast<ByteValue*>(tmp.GetByteValue());
+      r = codec->CleanupUnusedBits((char*)bv->GetVoidPointer(), bv->GetLength());
       if(!r) return false;
       r = codec->Code(tmp, out);
       }
@@ -277,10 +278,11 @@ bool ImageChangeTransferSyntax::TryJPEGLSCodec(const DataElement &pixelde, Bitma
     UpdatePhotometricInterpretation( input, output );
     if( input.GetPixelFormat().GetSamplesPerPixel() == 3 )
     {
-      if( input.GetPlanarConfiguration() == 0 )
+      if( input.GetPlanarConfiguration() == 1 )
       {
-        // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_8.2.3.html#table_8.2.3-1
-        output.SetPlanarConfiguration(1);
+        // CP-1843
+        // https://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_8.2.3.html#para_d1e96f41-db25-4a4b-9009-9fd3796e5b43
+        output.SetPlanarConfiguration(0);
       }
     }
 
@@ -403,6 +405,11 @@ bool ImageChangeTransferSyntax::Change()
   if( (Input->GetTransferSyntax() != TransferSyntax::ImplicitVRLittleEndian
     && Input->GetTransferSyntax() != TransferSyntax::ExplicitVRLittleEndian
     && Input->GetTransferSyntax() != TransferSyntax::ExplicitVRBigEndian)
+    // YBR_FULL_422 / raw needs to be decompressed:
+    || ( (Input->GetTransferSyntax() == TransferSyntax::ImplicitVRLittleEndian
+       || Input->GetTransferSyntax() == TransferSyntax::ExplicitVRLittleEndian
+       || Input->GetTransferSyntax() == TransferSyntax::ExplicitVRBigEndian)
+       && Input->GetPhotometricInterpretation() == PhotometricInterpretation::YBR_FULL_422 )
     || Force )
     {
     // In memory decompression:
@@ -410,7 +417,7 @@ bool ImageChangeTransferSyntax::Change()
     ByteValue *bv0 = new ByteValue();
     uint32_t len0 = (uint32_t)Input->GetBufferLength();
     bv0->SetLength( len0 );
-    bool b = Input->GetBuffer( (char*)bv0->GetPointer() );
+    bool b = Input->GetBuffer( (char*)bv0->GetVoidPointer() );
     if( !b )
       {
       gdcmErrorMacro( "Error in getting buffer from input image." );
@@ -438,14 +445,14 @@ bool ImageChangeTransferSyntax::Change()
       {
       Bitmap &outbitmap = *Output;
       Pixmap *outpixmap = dynamic_cast<Pixmap*>( &outbitmap );
-      assert( outpixmap != NULL );
+      assert( outpixmap != nullptr );
       if( !pixmap->GetIconImage().IsEmpty() )
         {
         // same goes for icon
         ByteValue *bv = new ByteValue();
         uint32_t len = (uint32_t)pixmap->GetIconImage().GetBufferLength();
         bv->SetLength( len );
-        bool bb = pixmap->GetIconImage().GetBuffer( (char*)bv->GetPointer() );
+        bool bb = pixmap->GetIconImage().GetBuffer( (char*)bv->GetVoidPointer() );
         if( !bb )
           {
           return false;

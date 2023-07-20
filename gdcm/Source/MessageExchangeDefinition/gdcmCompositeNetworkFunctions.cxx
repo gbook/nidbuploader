@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -124,7 +124,7 @@ BaseRootQuery* CompositeNetworkFunctions::ConstructQuery( ERootType inRootType,
 BaseRootQuery* CompositeNetworkFunctions::ConstructQuery( ERootType inRootType,
   EQueryLevel inQueryLevel, const DataSet& ds, EQueryType queryType /*= eFind*/ )
 {
-  BaseRootQuery* outQuery = NULL;
+  BaseRootQuery* outQuery = nullptr;
   if( queryType == eMove )
     outQuery = QueryFactory::ProduceQuery(inRootType, eMove, inQueryLevel);
   else if( queryType == eFind )
@@ -135,7 +135,7 @@ BaseRootQuery* CompositeNetworkFunctions::ConstructQuery( ERootType inRootType,
   if (!outQuery)
     {
     gdcmErrorMacro( "Specify the query" );
-    return NULL;
+    return nullptr;
     }
   outQuery->AddQueryDataSet(ds);
 
@@ -323,20 +323,20 @@ class MyWatcher : public SimpleSubjectWatcher
   double refprogress;
 public:
   MyWatcher(Subject * s, const char *comment = "", size_t n = 1):SimpleSubjectWatcher(s,comment),nfiles(n),progress(0),index(0),refprogress(0){}
-  void ShowIteration()
+  void ShowIteration() override
     {
     index++;
     assert( index <= nfiles );
     refprogress = progress;
     }
-  void ShowProgress(Subject *caller, const Event &evt)
+  void ShowProgress(Subject *caller, const Event &evt) override
     {
     const ProgressEvent &pe = dynamic_cast<const ProgressEvent&>(evt);
     (void)caller;
     progress = refprogress + (1. / (double)nfiles ) * pe.GetProgress();
 //    std::cout << "Progress: " << progress << " " << pe.GetProgress() << std::endl;
     }
-  virtual void ShowDataSet(Subject *, const Event &) {}
+  void ShowDataSet(Subject *, const Event &) override {}
 };
 
 bool CompositeNetworkFunctions::CStore( const char *remote, uint16_t portno,
@@ -411,7 +411,7 @@ bool CompositeNetworkFunctions::CStore( const char *remote, uint16_t portno,
       // Table W.4-1 C-STORE RESPONSE STATUS VALUES
       const uint16_t theVal = at.GetValue();
       // http://dicom.nema.org/medical/dicom/current/output/chtml/part07/chapter_C.html
-      if( theVal == 0x0 ) // Sucess
+      if( theVal == 0x0 ) // Success
         {
         gdcmDebugMacro( "C-Store of file " << filename << " was successful." );
         }

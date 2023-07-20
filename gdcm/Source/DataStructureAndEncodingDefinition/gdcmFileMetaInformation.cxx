@@ -56,7 +56,7 @@ const char * FileMetaInformation::GetGDCMSourceApplicationEntityTitle()
 
 // Keep cstor and dstor here to keep API minimal (see dllexport issue with gdcmstrict::)
 FileMetaInformation::FileMetaInformation():DataSetTS(TransferSyntax::TS_END),MetaInformationTS(TransferSyntax::Unknown),DataSetMS(MediaStorage::MS_END) {}
-FileMetaInformation::~FileMetaInformation() {}
+FileMetaInformation::~FileMetaInformation() = default;
 
 void FileMetaInformation::SetImplementationClassUID(const char * imp)
 {
@@ -287,7 +287,7 @@ void FileMetaInformation::FillFromDataSet(DataSet const &ds)
     {
     // Very bad !!
     //throw Exception( "No (0002,0010) element found" );
-    // Constuct it from DataSetTS
+    // Construct it from DataSetTS
     if( DataSetTS == TransferSyntax::TS_END )
       {
       throw gdcm::Exception( "No TransferSyntax specified." );
@@ -358,7 +358,7 @@ void FileMetaInformation::FillFromDataSet(DataSet const &ds)
 }
 
 // FIXME
-// This code should clearly be rewritten with some template meta programing to
+// This code should clearly be rewritten with some template meta-programming to
 // enable reuse of code...
 //
 // \postcondition after the file meta information (well before the dataset...)
@@ -413,7 +413,7 @@ bool ReadExplicitDataElement(std::istream &is, ExplicitDataElement &de)
     }
   //gdcmDebugMacro( "VL : " << vl );
   // Read the Value
-  ByteValue *bv = NULL;
+  ByteValue *bv = nullptr;
   if( vr == VR::SQ )
     {
     assert(0 && "Should not happen");
@@ -480,7 +480,7 @@ bool ReadImplicitDataElement(std::istream &is, ImplicitDataElement &de)
     assert(0 && "Should not happen");
     return false;
     }
-  ByteValue *bv = 0;
+  ByteValue *bv = nullptr;
   if( vl.IsUndefined() )
     {
     assert(0 && "Should not happen");
@@ -704,7 +704,7 @@ std::istream &FileMetaInformation::ReadCompat(std::istream &is)
 #define ADDVRIMPLICIT( element ) \
     case element: \
       de.SetVR( (VR::VRType)TagToType<0x0002,element>::VRType ); \
-      break;
+      break
 
 bool AddVRToDataElement(DataElement &de)
 {
@@ -878,7 +878,7 @@ std::string FileMetaInformation::GetMediaStorageAsString() const
       }
     }
   // Paranoid check: if last character of a VR=UI is space let's pretend this is a \0
-  if( ts.size() )
+  if( !ts.empty() )
     {
     char &last = ts[ts.size()-1];
     if( last == ' ' )

@@ -17,7 +17,7 @@
 namespace gdcm
 {
 
-Preamble::Preamble():Internal(0)
+Preamble::Preamble():Internal(nullptr)
 {
   Create();
 }
@@ -29,7 +29,7 @@ Preamble::~Preamble()
 
 std::istream &Preamble::Read(std::istream &is)
 {
-  // \precondition: we are at beg of Preamble
+  // \precondition: we are at beginning of Preamble
   gdcmAssertAlwaysMacro( !IsEmpty() /*&& is.tellg() == 0*/ );
   if( is.read(Internal, 128+4) )
     {
@@ -44,10 +44,10 @@ std::istream &Preamble::Read(std::istream &is)
 
   // else reset everything !
   delete[] Internal;
-  Internal = 0;
+  Internal = nullptr;
   throw Exception( "Not a DICOM V3 file (No Preamble)" );
 
-  // \postcondition we are after the Preamble (or at beg of file if none)
+  // \postcondition we are after the Preamble (or at the beginning of file if none)
 }
 
 void Preamble::Valid()
@@ -67,7 +67,7 @@ void Preamble::Create()
 void Preamble::Remove()
 {
   delete[] Internal;
-  Internal = 0; // important
+  Internal = nullptr; // important
 }
 
 // \precondition we are at the beginning of file
@@ -79,7 +79,7 @@ std::ostream const &Preamble::Write(std::ostream &os) const
     os.write( Internal, 128+4);
     }
 
-  // \postcondition a valid Preamble has been writen to stream
+  // \postcondition a valid Preamble has been written to stream
   return os;
 }
 

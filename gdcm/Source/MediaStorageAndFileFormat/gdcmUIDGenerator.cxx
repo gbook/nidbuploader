@@ -104,18 +104,18 @@ const char* UIDGenerator::Generate()
   if( Unique.empty() || Unique.size() > 62 ) // 62 is simply the highest possible limit
     {
     // I cannot go any further...
-    return NULL;
+    return nullptr;
     }
   unsigned char uuid[16];
   bool r = UIDGenerator::GenerateUUID(uuid);
   // This should only happen in some obscure cases. Since the creation of UUID failed
   // I should try to go any further and make sure the user's computer crash and burn
   // right away
-  if( !r ) return 0;
+  if( !r ) return nullptr;
   char randbytesbuf[64];
   size_t len = System::EncodeBytes(randbytesbuf, uuid, sizeof(uuid));
   assert( len < 64 ); // programmer error
-  Unique += "."; // This dot is compulsary to separate root from suffix
+  Unique += "."; // This dot is compulsory to separate root from suffix
   if( Unique.size() + len > 64 )
     {
     int idx = 0;
@@ -128,14 +128,14 @@ const char* UIDGenerator::Generate()
       unsigned int i = 0;
       while( ( Unique.size() + len > 64 ) && i < 8 )
         {
-        x[7-i] = 0;
+        x[7-i] = false;
         uuid[idx] = (unsigned char)x.to_ulong();
         len = System::EncodeBytes(randbytesbuf, uuid, sizeof(uuid));
         ++i;
         }
       if( ( Unique.size() + len > 64 ) && i == 8 )
         {
-        // too bad only reducing the 8 bits from uuid[idx] was not enought,
+        // too bad only reducing the 8 bits from uuid[idx] was not enough,
         // let's set to zero the following bits...
         idx++;
         }
@@ -150,7 +150,7 @@ const char* UIDGenerator::Generate()
       // Technically this could only happen when root has a length >= 64 ... is it
       // even remotely possible ?
       gdcmWarningMacro( "Root is too long for current implementation" );
-      return NULL;
+      return nullptr;
       }
     }
   // can now safely use randbytesbuf as is, no need to truncate any more:
@@ -227,14 +227,14 @@ bool UIDGenerator::IsValid(const char *uid_)
   std::string::size_type i = 0;
   for(; i < uid.size(); ++i)
     {
-    if( uid[i] == '.' ) // if test is true we are garantee that next char is valid (see previous check)
+    if( uid[i] == '.' ) // if test is true we are guarantee that next char is valid (see previous check)
       {
       // check that next character is neither '0' (except single number) not '.'
       if( uid[i+1] == '.' )
         {
         return false;
         }
-      else if( uid[i+1] == '0' ) // character is garantee to exist since '.' is not last char
+      else if( uid[i+1] == '0' ) // character is guarantee to exist since '.' is not last char
         {
         // Need to check first if we are not at the end of string
         if( i+2 != uid.size() && uid[i+2] != '.' )

@@ -316,7 +316,7 @@ bool RLECodec::Code(DataElement const &in, DataElement &out)
   SmartPointer<SequenceOfFragments> sq = new SequenceOfFragments;
   const Tag itemStart(0xfffe, 0xe000);
   //sq->GetTable().SetTag( itemStart );
-  // FIXME  ? Is this compulsary ?
+  // FIXME  ? Is this compulsory ?
   //const char dummy[4] = {};
   //sq->GetTable().SetByteValue( dummy, sizeof(dummy) );
 
@@ -327,9 +327,9 @@ bool RLECodec::Code(DataElement const &in, DataElement &out)
   unsigned long image_len = bvl / dims[2];
 
   // If 16bits, need to do the padded composite...
-  char *buffer = 0;
+  char *buffer = nullptr;
   // if rgb (3 comp) need to the planar configuration
-  char *bufferrgb = 0;
+  char *bufferrgb = nullptr;
   if( GetPixelFormat().GetBitsAllocated() > 8 )
     {
     //RequestPaddedCompositePixelCode = true;
@@ -396,11 +396,18 @@ bool RLECodec::Code(DataElement const &in, DataElement &out)
         {
         DoInvertPlanarConfiguration<char>(bufferrgb, ptr_img, (uint32_t)(image_len / sizeof(char)));
         }
-      else /* ( GetPixelFormat().GetBitsAllocated() == 16 ) */
+      else if ( GetPixelFormat().GetBitsAllocated() == 16 )
         {
-        assert( GetPixelFormat().GetBitsAllocated() == 16 );
-        // should not happen right ?
-        DoInvertPlanarConfiguration<short>((short*)bufferrgb, (const short*)ptr_img, (uint32_t)(image_len / sizeof(short)));
+        DoInvertPlanarConfiguration<short>((short*)(void*)bufferrgb, (const short*)(const void*)ptr_img, (uint32_t)(image_len / sizeof(short)));
+        }
+      else /* ( GetPixelFormat().GetBitsAllocated() == 32 ) */
+        {
+        assert( GetPixelFormat().GetBitsAllocated() == 32 );
+        DoInvertPlanarConfiguration<int32_t>(
+          (int32_t*)(void*)bufferrgb,
+          (const int32_t*)(const void*)ptr_img,
+          (uint32_t)(image_len / sizeof(int32_t))
+        );
         }
       ptr_img = bufferrgb;
       }
@@ -581,7 +588,7 @@ size_t RLECodec::DecodeFragment(Fragment const & frag, char *buffer, size_t llen
     std::streamoff check = bv.GetLength() - p;
     // check == 2 for gdcmDataExtra/gdcmSampleData/US_DataSet/GE_US/2929J686-breaker
     //assert( check == 0 || check == 1 || check == 2 );
-    if( check ) gdcmDebugMacro( "tiny offset detected in between RLE segments: " << check );
+    if( check ) { gdcmDebugMacro( "tiny offset detected in between RLE segments: " << check ); }
     }
   else
     {
@@ -781,7 +788,7 @@ bool RLECodec::DecodeByStreams(std::istream &is, std::ostream &os)
   // A footnote:
   // RLE *by definition* with more than one component will have applied the
   // Planar Configuration because it simply does not make sense to do it
-  // otherwise. So implicitely RLE is indeed PlanarConfiguration == 1. However
+  // otherwise. So implicitly RLE is indeed PlanarConfiguration == 1. However
   // when the image says: "hey I am PlanarConfiguration = 0 AND RLE", then
   // apply the PlanarConfiguration internally so that people don't get lost
   // Because GDCM internally set PlanarConfiguration == 0 by default, even if
@@ -903,30 +910,30 @@ public:
   memsrc( const char * data, size_t datalen ):ptr(data),cur(data),len(datalen)
     {
     }
-  int read( char * out, int l )
+  int read( char * out, int l ) override
     {
     memcpy( out, cur, l );
     cur += l;
     assert( cur <= ptr + len );
     return l;
     }
-  streampos_t tell()
+  streampos_t tell() override
     {
     assert( cur <= ptr + len );
     return (streampos_t)(cur - ptr);
     }
-  bool seek(streampos_t pos)
+  bool seek(streampos_t pos) override
     {
     cur = ptr + pos;
     assert( cur <= ptr + len && cur >= ptr );
     return true;
     }
-  bool eof()
+  bool eof() override
     {
     assert( cur <= ptr + len );
     return cur == ptr + len;
     }
-  memsrc * clone()
+  memsrc * clone() override
     {
     memsrc * ret = new memsrc( ptr, len );
     return ret;
@@ -951,12 +958,12 @@ public:
   {
   start = os.tellp();
   }
-  int write( const char * in, int len )
+  int write( const char * in, int len ) override
     {
     stream.write(in, len );
     return len;
     }
-  bool seek( streampos_t abs_pos )
+  bool seek( streampos_t abs_pos ) override
     {
     stream.seekp( abs_pos + start );
     return true;

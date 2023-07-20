@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,14 +35,14 @@ class GDCM_EXPORT ULWritingCallback : public ULConnectionCallback
 {
   std::string mDirectoryName;
 public:
-  ULWritingCallback() {};
-  virtual ~ULWritingCallback() {} //empty, for later inheritance
+  ULWritingCallback() = default;
+  ~ULWritingCallback() override = default; //empty, for later inheritance
 
   ///provide the directory into which all files are written.
   void SetDirectory(const std::string& inDirectoryName) { mDirectoryName = inDirectoryName; }
 
-  virtual void HandleDataSet(const DataSet& inDataSet);
-  virtual void HandleResponse(const DataSet& inDataSet);
+  void HandleDataSet(const DataSet& inDataSet) override;
+  void HandleResponse(const DataSet& inDataSet) override;
 };
 } // end namespace network
 } // end namespace gdcm

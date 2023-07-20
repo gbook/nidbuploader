@@ -30,14 +30,14 @@ class Pixmap;
  * It will override any info from the Image over the DataSet.
  *
  * For instance when one read in a lossy compressed image and write out as unencapsulated
- * (ie implicitely lossless) then some attribute are definitely needed to mark this
+ * (ie implicitly lossless) then some attribute are definitely needed to mark this
  * dataset as Lossy (typically 0028,2114)
  */
 class GDCM_EXPORT PixmapWriter : public Writer
 {
 public:
   PixmapWriter();
-  ~PixmapWriter();
+  ~PixmapWriter() override;
 
   const Pixmap& GetPixmap() const { return *PixelData; }
   Pixmap& GetPixmap() { return *PixelData; } // FIXME
@@ -51,7 +51,7 @@ public:
   virtual void SetImage(Pixmap const &img);
 
   /// Write
-  bool Write(); // Execute()
+  bool Write() override; // Execute()
 
 protected:
   void DoIconImage(DataSet & ds, Pixmap const & image);

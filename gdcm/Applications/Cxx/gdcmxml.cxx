@@ -56,7 +56,7 @@ class SimpleFileXMLPrinter : public XMLPrinter
 {
 public:
   void HandleBulkData(const char *uuid, const TransferSyntax & ts,
-    const char *bulkdata, size_t bulklen)
+    const char *bulkdata, size_t bulklen) override
     {
     // Store Bulk Data
     std::ofstream out( uuid, std::ios::binary );
@@ -355,7 +355,7 @@ static void PopulateDataSet(xmlTextReaderPtr reader,DataSet &DS, int depth, bool
           READ_NEXT \
           char *value_char = (char*)xmlTextReaderConstValue(reader); \
           int nvalue = sscanf(value_char,"%d",&(values[count++]));  \
-          assert( nvalue == 1 );  \
+          assert( nvalue == 1 ); (void)nvalue; \
           READ_NEXT /*Value ending tag*/ \
           name = (const char*)xmlTextReaderConstName(reader); \
           READ_NEXT \
@@ -702,13 +702,13 @@ int main (int argc, char *argv[])
   int error = 0;
   int help = 0;
   int version = 0;
-  while (1) {
+  while (true) {
 
     int option_index = 0;
 
     static struct option long_options[] = {
-        {"input", 1, 0, 0},
-        {"output", 1, 0, 0},
+        {"input", 1, nullptr, 0},
+        {"output", 1, nullptr, 0},
         {"loadBulkData", 0, &loadBulkData, 1},
         {"TransferSyntax", 0, &loadTransferSyntax, 1},
         {"verbose", 0, &verbose, 1},
@@ -717,7 +717,7 @@ int main (int argc, char *argv[])
         {"error", 0, &error, 1},
         {"help", 0, &help, 1},
         {"version", 0, &version, 1},
-        {0, 0, 0, 0} // required
+        {nullptr, 0, nullptr, 0} // required
     };
     static const char short_options[] = "i:o:BTVWDEhv";
     c = getopt_long (argc, argv, short_options,

@@ -17,7 +17,7 @@
  * See TestWriter
  */
 
-// This is the full md5 of the rewriten file. The file was manually check
+// This is the full md5 of the rewritten file. The file was manually check
 // and is (should be) exactly what should have been written in the first place
 // test was done using dcmtk 3.5.4 / dicom3tools
 static const char * const gdcmMD5DataBrokenImages[][2] = {
@@ -80,7 +80,7 @@ static const char * const gdcmMD5DataBrokenImages[][2] = {
 // dcdump kindda show file are somewhat compatible.
 { "69ca7a4300967cf2841da34d7904c6c4" , "TheralysGDCM120Bug.dcm" }, // size mismatch
 
-// GDCM 1.0 generated file. At that time, VL for a start/end item delimitor would be set to 0xFFF... instead of 0x0
+// GDCM 1.0 generated file. At that time, VL for a start/end item delimiter would be set to 0xFFF... instead of 0x0
 // dcmtk / dicom3tools do not seems to care about the value stored for VL, so does GDCM (now).
 // As a side note the FMI was set to Little Endian Implicit ...
 { "ddf83cd708e58021a633588927d55ab8" , "BugGDCM2_UndefItemWrongVL.dcm" }, // size mismatch
@@ -93,6 +93,9 @@ static const char * const gdcmMD5DataBrokenImages[][2] = {
 // Two Items in a single Frame JPEG compressed DICOM image:
 { "cd00658f54dbd2d2a9d02d64c6f6497e" , "JPEGInvalidSecondFrag.dcm" },
 
-{ 0 ,0 }
+// VR is set to 'OX'
+{ "5793021ffb7b3506ae22ae9329d67d29" , "Bug_Siemens_PrivateIconNoItem.dcm" },
+
+{ nullptr ,nullptr }
 };
 
